@@ -10,6 +10,7 @@ from aiogram.filters import Command, MagicData
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.utils.markdown import hcode, hbold
+from aiogram.utils.text_decorations import html_decoration as hd
 
 from app.bot.manager import Manager
 from app.bot.utils.redis import RedisStorage
@@ -105,6 +106,7 @@ def build_ans_keyboard(presets: dict[str, str]) -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
 
     for key in sorted(presets.keys()):
+        # callback_data — только технич. строка, HTML не нужен
         kb.button(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
 
     kb.adjust(2)
@@ -122,7 +124,7 @@ async def ans_command(message: Message, redis: RedisStorage) -> None:
 
     presets = await get_presets()
     if not presets:
-        await message.reply("Пресеты пустые. Добавь через /edit add <key> <text> или отредачь ans_presets.json.")
+        await message.reply("Пресеты пустые. Добавь через /edit add [key] [text] или отредачь ans_presets.json.")
         return
 
     kb = build_ans_keyboard(presets)
@@ -178,9 +180,9 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisSt
         error_text = manager.text_message.get("message_not_sent")
 
     confirm = (
-        f"✅ Отправлено пользователю пресетом: {hbold(preset_key)}"
+        f"✅ Отправлено пользователю пресетом: {hbold(hd.quote(preset_key))}"
         if ok
-        else f"❌ Не удалось отправить: {error_text or 'ошибка'}"
+        else f"❌ Не удалось отправить: {hd.quote(error_text or 'ошибка')}"
     )
 
     with suppress(TelegramBadRequest):
@@ -195,11 +197,13 @@ async def edit_presets(message: Message) -> None:
     Commands:
       /edit
       /edit list
-      /edit show <key>
-      /edit add <key> <text...>
-      /edit del <key>
+      /edit show [key]
+      /edit add [key] [text...]
+      /edit del [key]
       /edit reload
     """
+    global _PRESETS_CACHE
+
     parts = (message.text or "").split(maxsplit=3)
     action = parts[1].lower() if len(parts) > 1 else "list"
 
@@ -207,9 +211,9 @@ async def edit_presets(message: Message) -> None:
         await message.reply(
             "Управление пресетами:\n"
             "• /edit list\n"
-            "• /edit show <key>\n"
-            "• /edit add <key> <text>\n"
-            "• /edit del <key>\n"
+            "• /edit show [key]\n"
+            "• /edit add [key] [text]\n"
+            "• /edit del [key]\n"
             "• /edit reload"
         )
         return
@@ -218,7 +222,7 @@ async def edit_presets(message: Message) -> None:
         try:
             presets = await reload_presets()
         except Exception as e:
-            await message.reply(f"❌ Не удалось перечитать файл: {e}")
+            await message.reply(f"❌ Не удалось перечитать файл: {hd.quote(str(e))}")
             return
         await message.reply(f"✅ Перечитал файл. Пресетов: {len(presets)}")
         return
@@ -226,15 +230,15 @@ async def edit_presets(message: Message) -> None:
     if action in {"list", "ls"}:
         presets = await get_presets()
         if not presets:
-            await message.reply("Пресетов нет. Добавь через /edit add <key> <text>.")
+            await message.reply("Пресетов нет. Добавь через /edit add [key] [text].")
             return
-        keys = "\n".join(f"• {k}" for k in sorted(presets.keys()))
+        keys = "\n".join(f"• {hd.quote(k)}" for k in sorted(presets.keys()))
         await message.reply(f"Пресеты ({len(presets)}):\n{keys}")
         return
 
     if action == "show":
         if len(parts) < 3:
-            await message.reply("Использование: /edit show <key>")
+            await message.reply("Использование: /edit show [key]")
             return
         key = _normalize_key(parts[2])
         presets = await get_presets()
@@ -242,17 +246,16 @@ async def edit_presets(message: Message) -> None:
         if not text:
             await message.reply("Не найдено.")
             return
-        await message.reply(f"{hbold(key)}:\n{text}")
+        await message.reply(f"{hbold(hd.quote(key))}:\n{hd.quote(text)}")
         return
 
     if action == "del":
         if len(parts) < 3:
-            await message.reply("Использование: /edit del <key>")
+            await message.reply("Использование: /edit del [key]")
             return
         key = _normalize_key(parts[2])
 
         async with _PRESETS_LOCK:
-            global _PRESETS_CACHE
             if _PRESETS_CACHE is None:
                 _PRESETS_CACHE = await _load_presets_from_disk()
 
@@ -263,12 +266,12 @@ async def edit_presets(message: Message) -> None:
             _PRESETS_CACHE.pop(key, None)
             await save_presets(_PRESETS_CACHE)
 
-        await message.reply(f"✅ Удалил пресет: {hbold(key)}")
+        await message.reply(f"✅ Удалил пресет: {hbold(hd.quote(key))}")
         return
 
     if action in {"add", "set", "upd", "update"}:
         if len(parts) < 4:
-            await message.reply("Использование: /edit add <key> <text>")
+            await message.reply("Использование: /edit add [key] [text]")
             return
 
         key = _normalize_key(parts[2])
@@ -282,14 +285,13 @@ async def edit_presets(message: Message) -> None:
             return
 
         async with _PRESETS_LOCK:
-            global _PRESETS_CACHE
             if _PRESETS_CACHE is None:
                 _PRESETS_CACHE = await _load_presets_from_disk()
 
             _PRESETS_CACHE[key] = text
             await save_presets(_PRESETS_CACHE)
 
-        await message.reply(f"✅ Сохранил пресет: {hbold(key)}")
+        await message.reply(f"✅ Сохранил пресет: {hbold(hd.quote(key))}")
         return
 
     await message.reply("Неизвестная команда. Напиши /edit help.")
