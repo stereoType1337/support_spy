@@ -1,10 +1,15 @@
+import asyncio
+import json
 from contextlib import suppress
+from pathlib import Path
+from typing import Any
 
 from aiogram import Router, F
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from aiogram.filters import Command, MagicData
-from aiogram.types import Message
-from aiogram.utils.markdown import hcode
+from aiogram.types import Message, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.markdown import hcode, hbold
 
 from app.bot.manager import Manager
 from app.bot.utils.redis import RedisStorage
@@ -19,9 +24,6 @@ router_id.message.filter(
 async def handler(message: Message) -> None:
     """
     Sends chat ID in response to the /id command.
-
-    :param message: Message object.
-    :return: None
     """
     await message.reply(hcode(message.chat.id))
 
@@ -32,6 +34,265 @@ router.message.filter(
     F.chat.type.in_(["group", "supergroup"]),
     MagicData(F.event_chat.id == F.config.bot.GROUP_ID),  # type: ignore
 )
+
+ANS_CB_PREFIX = "ans:"
+PRESETS_FILE = Path(__file__).with_name("ans_presets.json")
+_PRESETS_LOCK = asyncio.Lock()
+_PRESETS_CACHE: dict[str, str] | None = None
+
+
+def _normalize_key(key: str) -> str:
+    return key.strip().lower().replace(" ", "_")
+
+
+async def _load_presets_from_disk() -> dict[str, str]:
+    """
+    Reads presets JSON from disk. If file doesn't exist, creates an empty one.
+    """
+    if not PRESETS_FILE.exists():
+        PRESETS_FILE.write_text("{}", encoding="utf-8")
+
+    raw = PRESETS_FILE.read_text(encoding="utf-8").strip()
+    if not raw:
+        return {}
+
+    data: Any = json.loads(raw)
+    if not isinstance(data, dict):
+        raise ValueError("ans_presets.json must contain a JSON object (dict)")
+
+    out: dict[str, str] = {}
+    for k, v in data.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            continue
+        nk = _normalize_key(k)
+        if nk:
+            out[nk] = v
+    return out
+
+
+async def get_presets() -> dict[str, str]:
+    """
+    Cached presets read; reloadable.
+    """
+    global _PRESETS_CACHE
+    async with _PRESETS_LOCK:
+        if _PRESETS_CACHE is None:
+            _PRESETS_CACHE = await _load_presets_from_disk()
+        return dict(_PRESETS_CACHE)
+
+
+async def reload_presets() -> dict[str, str]:
+    global _PRESETS_CACHE
+    async with _PRESETS_LOCK:
+        _PRESETS_CACHE = await _load_presets_from_disk()
+        return dict(_PRESETS_CACHE)
+
+
+async def save_presets(presets: dict[str, str]) -> None:
+    """
+    Atomic-ish save to disk (write temp then replace).
+    """
+    tmp = PRESETS_FILE.with_suffix(".json.tmp")
+    payload = json.dumps(presets, ensure_ascii=False, indent=2, sort_keys=True)
+    tmp.write_text(payload + "\n", encoding="utf-8")
+    tmp.replace(PRESETS_FILE)
+
+
+def build_ans_keyboard(presets: dict[str, str]) -> InlineKeyboardBuilder:
+    """
+    Builds inline keyboard from presets keys.
+    """
+    kb = InlineKeyboardBuilder()
+
+    for key in sorted(presets.keys()):
+        kb.button(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
+
+    kb.adjust(2)
+    return kb
+
+
+@router.message(Command("ans"))
+async def ans_command(message: Message, redis: RedisStorage) -> None:
+    """
+    /ans — creates a message with inline buttons (preset answers) in current support topic.
+    """
+    user_data = await redis.get_by_message_thread_id(message.message_thread_id)
+    if not user_data:
+        return
+
+    presets = await get_presets()
+    if not presets:
+        await message.reply("Пресеты пустые. Добавь через /edit add <key> <text> или отредачь ans_presets.json.")
+        return
+
+    kb = build_ans_keyboard(presets)
+    await message.reply("Выбери пресет ответа:", reply_markup=kb.as_markup())
+
+
+@router.callback_query(
+    F.data.startswith(ANS_CB_PREFIX),
+    MagicData(F.event_chat.id == F.config.bot.GROUP_ID),  # type: ignore
+)
+async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisStorage) -> None:
+    """
+    On preset button click: sends preset text to user напрямую, и подтверждает в топике.
+    """
+    if not callback.message or callback.message.message_thread_id is None:
+        await callback.answer("Это можно использовать только в топиках.", show_alert=True)
+        return
+
+    preset_key = callback.data.split(":", 1)[1] if callback.data else ""
+    preset_key = _normalize_key(preset_key)
+
+    presets = await get_presets()
+    preset_text = presets.get(preset_key)
+    if not preset_text:
+        await callback.answer("Пресет не найден (возможно обновили файл). Нажми /ans заново.", show_alert=True)
+        return
+
+    user_data = await redis.get_by_message_thread_id(callback.message.message_thread_id)
+    if not user_data:
+        await callback.answer("Не нашёл пользователя для этого топика.", show_alert=True)
+        return
+
+    if user_data.message_silent_mode:
+        await callback.answer("У пользователя включён silent mode.", show_alert=True)
+        return
+
+    with suppress(TelegramBadRequest):
+        await callback.answer("Отправляю…")
+
+    ok = True
+    error_text: str | None = None
+
+    try:
+        await callback.bot.send_message(chat_id=user_data.id, text=preset_text)
+    except TelegramAPIError as ex:
+        ok = False
+        if "blocked" in (ex.message or ""):
+            error_text = manager.text_message.get("blocked_by_user")
+        else:
+            error_text = manager.text_message.get("message_not_sent")
+    except Exception:
+        ok = False
+        error_text = manager.text_message.get("message_not_sent")
+
+    confirm = (
+        f"✅ Отправлено пользователю пресетом: {hbold(preset_key)}"
+        if ok
+        else f"❌ Не удалось отправить: {error_text or 'ошибка'}"
+    )
+
+    with suppress(TelegramBadRequest):
+        await callback.message.reply(confirm)
+
+
+@router.message(Command("edit"))
+async def edit_presets(message: Message) -> None:
+    """
+    /edit — manage presets stored in ans_presets.json
+
+    Commands:
+      /edit
+      /edit list
+      /edit show <key>
+      /edit add <key> <text...>
+      /edit del <key>
+      /edit reload
+    """
+    parts = (message.text or "").split(maxsplit=3)
+    action = parts[1].lower() if len(parts) > 1 else "list"
+
+    if action in {"help", "h", "?"}:
+        await message.reply(
+            "Управление пресетами:\n"
+            "• /edit list\n"
+            "• /edit show <key>\n"
+            "• /edit add <key> <text>\n"
+            "• /edit del <key>\n"
+            "• /edit reload"
+        )
+        return
+
+    if action == "reload":
+        try:
+            presets = await reload_presets()
+        except Exception as e:
+            await message.reply(f"❌ Не удалось перечитать файл: {e}")
+            return
+        await message.reply(f"✅ Перечитал файл. Пресетов: {len(presets)}")
+        return
+
+    if action in {"list", "ls"}:
+        presets = await get_presets()
+        if not presets:
+            await message.reply("Пресетов нет. Добавь через /edit add <key> <text>.")
+            return
+        keys = "\n".join(f"• {k}" for k in sorted(presets.keys()))
+        await message.reply(f"Пресеты ({len(presets)}):\n{keys}")
+        return
+
+    if action == "show":
+        if len(parts) < 3:
+            await message.reply("Использование: /edit show <key>")
+            return
+        key = _normalize_key(parts[2])
+        presets = await get_presets()
+        text = presets.get(key)
+        if not text:
+            await message.reply("Не найдено.")
+            return
+        await message.reply(f"{hbold(key)}:\n{text}")
+        return
+
+    if action == "del":
+        if len(parts) < 3:
+            await message.reply("Использование: /edit del <key>")
+            return
+        key = _normalize_key(parts[2])
+
+        async with _PRESETS_LOCK:
+            global _PRESETS_CACHE
+            if _PRESETS_CACHE is None:
+                _PRESETS_CACHE = await _load_presets_from_disk()
+
+            if key not in _PRESETS_CACHE:
+                await message.reply("Такого ключа нет.")
+                return
+
+            _PRESETS_CACHE.pop(key, None)
+            await save_presets(_PRESETS_CACHE)
+
+        await message.reply(f"✅ Удалил пресет: {hbold(key)}")
+        return
+
+    if action in {"add", "set", "upd", "update"}:
+        if len(parts) < 4:
+            await message.reply("Использование: /edit add <key> <text>")
+            return
+
+        key = _normalize_key(parts[2])
+        text = parts[3].strip()
+
+        if not key:
+            await message.reply("Ключ пустой/некорректный.")
+            return
+        if not text:
+            await message.reply("Текст пустой.")
+            return
+
+        async with _PRESETS_LOCK:
+            global _PRESETS_CACHE
+            if _PRESETS_CACHE is None:
+                _PRESETS_CACHE = await _load_presets_from_disk()
+
+            _PRESETS_CACHE[key] = text
+            await save_presets(_PRESETS_CACHE)
+
+        await message.reply(f"✅ Сохранил пресет: {hbold(key)}")
+        return
+
+    await message.reply("Неизвестная команда. Напиши /edit help.")
 
 
 @router.message(Command("silent"))
