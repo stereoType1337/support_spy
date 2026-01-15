@@ -32,5 +32,6 @@ async def handler(call: CallbackQuery, manager: Manager, redis: RedisStorage, us
         await redis.update_user(user_data.id, user_data)
         await manager.state.update_data(language_code=call.data)
         await Window.main_menu(manager)
+        await call.message.answer(manager.text_message.get("faq_msg"))
 
     await call.answer()

@@ -55,10 +55,16 @@ async def setup(bot: Bot, config: Config) -> None:
     admin_commands = {
         "en":
             commands["en"].copy() +
-            [BotCommand(command="newsletter", description="Newsletter menu")],
+            [
+                BotCommand(command="newsletter", description="Newsletter menu"),
+                BotCommand(command="delete_topics", description="Delete topics by date range (DD.MM.YYYY-DD.MM.YYYY)"),
+            ],
         "ru":
             commands["ru"].copy() +
-            [BotCommand(command="newsletter", description="Меню рассылки")],
+            [
+                BotCommand(command="newsletter", description="Меню рассылки"),
+                BotCommand(command="delete_topics", description="Удалить топики за период (DD.MM.YYYY-DD.MM.YYYY)"),
+            ],
     }
 
     try:

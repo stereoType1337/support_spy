@@ -44,6 +44,23 @@ class RedisConfig:
 
 
 @dataclass
+class ApiConfig:
+    """
+    Data class representing the configuration for API.
+
+    Attributes:
+    - URL (str): The API base URL.
+    - TOKEN (str): The API token.
+    - ADMIN_TG_ID (int): The admin Telegram ID for API requests.
+    - BOT_USERNAME (str): The bot username for generating links.
+    """
+    URL: str
+    TOKEN: str
+    ADMIN_TG_ID: int
+    BOT_USERNAME: str
+
+
+@dataclass
 class Config:
     """
     Data class representing the overall configuration for the application.
@@ -51,9 +68,11 @@ class Config:
     Attributes:
     - bot (BotConfig): The bot configuration.
     - redis (RedisConfig): The Redis configuration.
+    - api (ApiConfig): The API configuration.
     """
     bot: BotConfig
     redis: RedisConfig
+    api: ApiConfig
 
 
 def load_config() -> Config:
@@ -76,5 +95,11 @@ def load_config() -> Config:
             HOST=env.str("REDIS_HOST"),
             PORT=env.int("REDIS_PORT"),
             DB=env.int("REDIS_DB"),
+        ),
+        api=ApiConfig(
+            URL=env.str("API_URL", default="https://bot.raytun.ru/api"),
+            TOKEN=env.str("API_TOKEN"),
+            ADMIN_TG_ID=env.int("API_ADMIN_TG_ID"),
+            BOT_USERNAME=env.str("BOT_USERNAME", default="vpn_plus777_bot"),
         ),
     )

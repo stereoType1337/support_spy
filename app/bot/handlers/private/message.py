@@ -10,6 +10,7 @@ from app.bot.types.album import Album
 from app.bot.utils.create_forum_topic import (
     create_forum_topic,
     get_or_create_forum_topic,
+    edit_forum_topic_title,
 )
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
@@ -87,7 +88,9 @@ async def handle_incoming_message(
     try:
         await copy_message_to_topic()
     except TelegramBadRequest as ex:
-        if "message thread not found" in ex.message:
+        error_message = ex.message.lower()
+        if "message thread not found" in error_message or "topic_id_invalid" in error_message:
+            user_data.message_thread_id = None
             user_data.message_thread_id = await create_forum_topic(
                 message.bot,
                 manager.config,
@@ -106,3 +109,17 @@ async def handle_incoming_message(
     await asyncio.sleep(5)
     # Delete the reply to the edited message
     await msg.delete()
+
+    # Update user status emoji in forum topic title
+    if not user_data.is_bot_stopped and not user_data.is_bot_restarted:
+        user_data.has_sent_message = True
+        user_data.has_bot_replied = False
+        await redis.update_user(user_data.id, user_data)
+        emoji = "📚"
+        new_title = f"{message.from_user.full_name} {emoji}"
+        if user_data.message_thread_id:
+            # Меняем только если эмодзи не стоит
+            try:
+                await edit_forum_topic_title(message.bot, manager.config, user_data.message_thread_id, new_title)
+            except Exception as e:
+                pass

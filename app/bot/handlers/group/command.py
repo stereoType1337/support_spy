@@ -4,7 +4,7 @@ from aiogram import Router, F
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, MagicData
 from aiogram.types import Message
-from aiogram.utils.markdown import hcode, hbold
+from aiogram.utils.markdown import hcode
 
 from app.bot.manager import Manager
 from app.bot.utils.redis import RedisStorage
@@ -90,11 +90,9 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
     if not user_data: return None  # noqa
 
-    format_data = user_data.to_dict()
-    format_data["full_name"] = hbold(format_data["full_name"])
     text = manager.text_message.get("user_information")
     # Reply with formatted user information
-    await message.reply(text.format_map(format_data))
+    await message.reply(text.format_map(user_data.to_dict()))
 
 
 @router.message(Command(commands=["ban"]))

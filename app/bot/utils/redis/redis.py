@@ -105,3 +105,17 @@ class RedisStorage:
         async with self.redis.client() as client:
             user_ids = await client.hkeys(self.NAME)
             return [int(user_id) for user_id in user_ids]
+
+    async def get_all_users(self) -> list[UserData]:
+        """
+        Retrieves all user data stored in the Redis hash.
+
+        :return: A list of all UserData objects.
+        """
+        user_ids = await self.get_all_users_ids()
+        users = []
+        for user_id in user_ids:
+            user = await self.get_user(user_id)
+            if user:
+                users.append(user)
+        return users

@@ -1,7 +1,5 @@
 from abc import abstractmethod, ABCMeta
 
-from aiogram.utils.markdown import hbold
-
 # Add other languages and their corresponding codes as needed.
 # You can also keep only one language by removing the line with the unwanted language.
 SUPPORTED_LANGUAGES = {
@@ -57,7 +55,7 @@ class TextMessage(Text):
         """
         return {
             "en": {
-                "select_language": f"👋 <b>Hello</b>, {hbold('{full_name}')}!\n\nSelect language:",
+                "select_language": "👋 <b>Hello</b>, {full_name}!\n\nSelect language:",
                 "change_language": "<b>Select language:</b>",
                 "main_menu": "<b>Write your question</b>, and we will answer you as soon as possible:",
                 "message_sent": "<b>Message sent!</b> Expect a response.",
@@ -70,7 +68,9 @@ class TextMessage(Text):
                     "<a href=\"https://github.com/nessshon/support-bot\">GitHub</a>"
                 ),
                 "user_started_bot": (
-                    f"User {hbold('{name}')} started the bot!\n\n"
+                    "<b>User {name} started the bot!</b>\n\n"
+                    "<b>ID:</b>\n"
+                    "- <code>{id}</code>\n\n"
                     "List of available commands:\n\n"
                     "• /ban\n"
                     "Block/Unblock user"
@@ -82,8 +82,8 @@ class TextMessage(Text):
                     "User information"
                     "<blockquote>Receive a message with basic information about the user.</blockquote>"
                 ),
-                "user_restarted_bot": f"User {hbold('{name}')} restarted the bot!",
-                "user_stopped_bot": f"User {hbold('{name}')} stopped the bot!",
+                "user_restarted_bot": "<b>User {name} restarted the bot!</b>",
+                "user_stopped_bot": "<b>User {name} stopped the bot!</b>",
                 "user_blocked": "<b>User blocked!</b> Messages from the user are not accepted.",
                 "user_unblocked": "<b>User unblocked!</b> Messages from the user are being accepted again.",
                 "blocked_by_user": "<b>Message not sent!</b> The bot has been blocked by the user.",
@@ -109,11 +109,29 @@ class TextMessage(Text):
                 "silent_mode_disabled": (
                     "<b>Silent mode deactivated!</b> The user will receive all messages."
                 ),
+                "faq_msg": (
+                    "<b>Please, before asking a question</b>, check the FAQ:\n\n"
+                    "- If VPN does not work, send a screenshot from the <b>V2RayTun</b> or <b>Happ</b> app\n\n"
+                    "- <b>This VPN only works in Russia</b>\n\n"
+                    "- <b>VPN will not work in Turkmenistan</b>\n\n"
+                    "- <b>VPN will not work in Iran</b>\n\n"
+                    "- <b>Please do not write that you are from Iran</b>\n\n"
+                    "- <b>VPN works only in Russia</b>\n\n"
+                    "- <b>All messages will be ignored</b>\n\n"
+                ),
             },
             "ru": {
-                "select_language": f"👋 <b>Привет</b>, {hbold('{full_name}')}!\n\nВыберите язык:",
+                "select_language": "👋 <b>Привет</b>, {full_name}!\n\nВыберите язык:",
                 "change_language": "<b>Выберите язык:</b>",
-                "main_menu": "<b>Оставьте свой вопрос</b>, и мы ответим вам в ближайшее время:",
+                "main_menu": (
+                    "<b>👋 Здравствуйте! 🚀</b>\n\n"
+                    "Вы обратились в поддержку бота "
+                    "<a href=\"https://t.me/vpn_plus777_bot\">@vpn_plus777_bot</a>.\n"
+                    "Пожалуйста, опишите вашу проблему — мы ответим вам в ближайшее время.\n\n"
+                    "<b>🛒 Приобрести подписку:</b>\n"
+                    "<a href=\"https://t.me/vpn_plus777_bot?start=utm_supp\">Happ | VPN | Vless</a>\n"
+                    "⚠️ Пробный период не предоставляется.\n\n"
+                ),
                 "message_sent": "<b>Сообщение отправлено!</b> Ожидайте ответа.",
                 "message_edited": (
                     "<b>Сообщение отредактировано только в вашем чате.</b> "
@@ -124,7 +142,7 @@ class TextMessage(Text):
                     "<a href=\"https://github.com/nessshon/support-bot\">GitHub</a>"
                 ),
                 "user_started_bot": (
-                    f"Пользователь {hbold('{name}')} запустил(а) бота!\n\n"
+                    "<b>Пользователь {name} запустил(а) бота!</b>\n\n"
                     "Список доступных команд:\n\n"
                     "• /ban\n"
                     "Заблокировать/Разблокировать пользователя"
@@ -135,9 +153,10 @@ class TextMessage(Text):
                     "• /information\n"
                     "Информация о пользователе"
                     "<blockquote>Получить сообщение с основной информацией о пользователе.</blockquote>"
+
                 ),
-                "user_restarted_bot": f"Пользователь {hbold('{name}')} перезапустил(а) бота!",
-                "user_stopped_bot": f"Пользователь {hbold('{name}')} остановил(а) бота!",
+                "user_restarted_bot": "<b>Пользователь {name} перезапустил(а) бота!</b>",
+                "user_stopped_bot": "<b>Пользователь {name} остановил(а) бота!</b>",
                 "user_blocked": "<b>Пользователь заблокирован!</b> Сообщения от пользователя не принимаются.",
                 "user_unblocked": "<b>Пользователь разблокирован!</b> Сообщения от пользователя вновь принимаются.",
                 "blocked_by_user": "<b>Сообщение не отправлено!</b> Бот был заблокирован пользователем.",
@@ -163,5 +182,31 @@ class TextMessage(Text):
                 "silent_mode_disabled": (
                     "<b>Тихий режим деактивирован!</b> Пользователь будет получать все сообщения."
                 ),
+                "faq_msg": (
+                    "<b>❗️ Перед обращением в поддержку, пожалуйста, соблюдайте правила подачи тикета:</b>\n\n"
+
+                    "1️⃣ Отправьте <b>скриншот</b> из приложения <b>Happ</b> / <b>V2RayTun</b> "
+                    "(желательно с проверкой доступности серверов):\n"
+                    "<a href=\"https://t.me/instructionsdlya/50/51\">Открыть инструкцию</a>\n\n"
+
+                    "2️⃣ <b>Обязательно укажите:</b>\n"
+                    "• Тип подключения: <i>Wi-Fi</i> или <i>мобильный интернет</i>\n"
+                    "• Ваш оператор связи\n"
+                    "• ⚠️ Включены ли глушилки интернета\n\n"
+
+                    "3️⃣ <b>Напишите, что вы уже пробовали:</b>\n"
+                    "• Перезагружали ли телефон\n"
+                    "• Переустанавливали ли приложение\n"
+                    "• Обновляли ли конфигурацию / подписку\n\n"
+
+                    "<b>🧑‍💻 Гайды:</b>\n"
+                    "• <a href=\"https://teletype.in/@vless_vpn/vYH2cx68nsr\">Настройка приложения Happ (все устройства)</a>\n"
+                    "• <a href=\"https://telegra.ph/Nastrojka-VPN-na-Windows-Koala-Clash-10-03\">Настройка на Windows</a>\n"
+                    "• <a href=\"https://teletype.in/@vless_vpn/P5arJF8pxLz\">Настройка на ТВ</a>\n"
+                    "• <a href=\"https://t.me/instructionsdlya/2/4\">Подключение второго / третьего устройства</a>\n"
+                    "• <a href=\"https://t.me/instructionsdlya/53/55\">Продление на 6–9 устройств</a>\n"
+                    "• <a href=\"https://t.me/instructionsdlya/53/55\">Удаление лишних устройств</a>"
+                )
+                ,
             },
         }

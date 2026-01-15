@@ -16,6 +16,10 @@ class UserData:
     is_banned: bool = False
     language_code: str | None = None
     created_at: str = datetime.now(timezone(timedelta(hours=3))).strftime("%Y-%m-%d %H:%M:%S %Z")
+    has_sent_message: bool = False
+    has_bot_replied: bool = False
+    is_bot_stopped: bool = False
+    is_bot_restarted: bool = False
 
     def to_dict(self) -> dict:
         """

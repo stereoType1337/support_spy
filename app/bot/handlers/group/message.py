@@ -1,15 +1,18 @@
 import asyncio
 from typing import Optional
+import re
 
 from aiogram import Router, F
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import MagicData
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.markdown import hlink
 
 from app.bot.manager import Manager
 from app.bot.types.album import Album
 from app.bot.utils.redis import RedisStorage
+from app.bot.utils.create_forum_topic import edit_forum_topic_title
+from app.bot.utils.api import get_user_info, get_user_keys, format_user_info_message
 
 router = Router()
 router.message.filter(
@@ -23,22 +26,54 @@ router.message.filter(
 async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
     await asyncio.sleep(3)
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
-    if not user_data: return None  # noqa
+    if not user_data:
+        # If user_data not found, delete the system message to prevent it from appearing in general
+        try:
+            await message.delete()
+        except Exception:
+            pass
+        return None  # noqa
 
-    # Generate a URL for the user's profile
-    url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
+    # Получаем информацию о пользователе из API
+    user_info = await get_user_info(manager.config.api, user_data.id)
+    keys = []
+    text = ""
+    
+    if user_info:
+        # Получаем ключи пользователя
+        keys = await get_user_keys(manager.config.api, user_data.id)
+        # Форматируем сообщение с информацией из API
+        text = format_user_info_message(user_info, keys)
+    else:
+        # Если API не вернул данные, используем базовую информацию
+        url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
+        text = manager.text_message.get("user_started_bot")
+        text = text.format(name=hlink(user_data.full_name, url), id=user_data.id)
 
-    # Get the appropriate text based on the user's state
-    text = manager.text_message.get("user_started_bot")
+    # Создаем кнопку "Открыть в боте"
+    bot_username = manager.config.api.BOT_USERNAME
+    bot_link = f"https://t.me/{bot_username}?start=search_{user_data.id}"
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Открыть в боте",
+                    url=bot_link
+                )
+            ]
+        ]
+    )
 
-    message = await message.bot.send_message(
+    sent_message = await message.bot.send_message(
         chat_id=manager.config.bot.GROUP_ID,
-        text=text.format(name=hlink(user_data.full_name, url)),
-        message_thread_id=user_data.message_thread_id
+        text=text,
+        message_thread_id=user_data.message_thread_id,
+        reply_markup=keyboard,
+        parse_mode="HTML"
     )
 
     # Pin the message
-    await message.pin()
+    await sent_message.pin()
 
 
 @router.message(F.pinned_message | F.forum_topic_edited | F.forum_topic_closed | F.forum_topic_reopened)
@@ -72,24 +107,43 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage, album
         # If silent mode is enabled, ignore all messages.
         return
 
-    text = manager.text_message.get("message_sent_to_user")
-
+    text = None
     try:
         if not album:
             await message.copy_to(chat_id=user_data.id)
         else:
             await album.copy_to(chat_id=user_data.id)
 
+        # Сообщение отправлено пользователю — меняем статус и название темы
+        user_data.has_bot_replied = True
+        user_data.has_sent_message = False
+        await redis.update_user(user_data.id, user_data)
+        emoji = "🔑"
+        full_name = clean_name(user_data.full_name) or "Пользователь"
+        new_title = f"{full_name} {emoji}"
+        print(f"[DEBUG] Переименовываем тему: {new_title}")
+        if user_data.message_thread_id:
+            try:
+                await edit_forum_topic_title(message.bot, manager.config, user_data.message_thread_id, new_title)
+            except Exception:
+                pass
+        text = manager.text_message.get("message_sent_to_user")
+
     except TelegramAPIError as ex:
         if "blocked" in ex.message:
             text = manager.text_message.get("blocked_by_user")
+        else:
+            text = manager.text_message.get("message_not_sent")
 
-    except (Exception,):
+    except Exception:
         text = manager.text_message.get("message_not_sent")
 
-    # Reply to the edited message with the specified text
-    msg = await message.reply(text)
-    # Wait for 5 seconds before deleting the reply
-    await asyncio.sleep(5)
-    # Delete the reply to the edited message
-    await msg.delete()
+    if text:
+        msg = await message.reply(text)
+        await asyncio.sleep(5)
+        await msg.delete()
+
+
+def clean_name(name):
+    # Удаляем статусы-эмодзи (книжка, галка, часы, пробелы в конце)
+    return re.sub(r'[\s📚✅⏰]+$', '', name or '')
