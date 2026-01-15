@@ -49,6 +49,8 @@ async def setup(bot: Bot, config: Config) -> None:
             BotCommand(command="ban", description="Заблокировать/Разблокировать пользователя"),
             BotCommand(command="silent", description="Активировать/Деактивировать тихий режим"),
             BotCommand(command="information", description="Информация о пользователе"),
+            BotCommand(command="ans", description="Список пресетов"),
+            BotCommand(command="edit", description="Изменить пресеты"),
         ]
     }
 
