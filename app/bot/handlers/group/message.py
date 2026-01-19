@@ -5,14 +5,16 @@ import re
 from aiogram import Router, F
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import MagicData
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message,InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.markdown import hlink
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.manager import Manager
 from app.bot.types.album import Album
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
 from app.bot.utils.api import get_user_info, get_user_keys, format_user_info_message
+from app.bot.handlers.group.command import get_presets, ANS_CB_PREFIX
 
 router = Router()
 router.message.filter(
@@ -22,47 +24,48 @@ router.message.filter(
 )
 
 
+async def build_topic_keyboard(manager: Manager, user_id: int) -> InlineKeyboardMarkup:
+    presets = await get_presets()
+
+    bot_username = manager.config.api.BOT_USERNAME
+    bot_link = f"https://t.me/{bot_username}?start=search_{user_id}"
+
+    kb = InlineKeyboardBuilder()
+
+    kb.row(
+        InlineKeyboardButton(text="Открыть в боте", url=bot_link)
+    )
+
+    for key in sorted(presets.keys()):
+        kb.button(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
+    kb.adjust(1, 2)
+
+    return kb.as_markup()
+
+
 @router.message(F.forum_topic_created)
 async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
     await asyncio.sleep(3)
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
     if not user_data:
-        # If user_data not found, delete the system message to prevent it from appearing in general
         try:
             await message.delete()
         except Exception:
             pass
         return None  # noqa
 
-    # Получаем информацию о пользователе из API
     user_info = await get_user_info(manager.config.api, user_data.id)
-    keys = []
     text = ""
-    
+
     if user_info:
-        # Получаем ключи пользователя
         keys = await get_user_keys(manager.config.api, user_data.id)
-        # Форматируем сообщение с информацией из API
         text = format_user_info_message(user_info, keys)
     else:
-        # Если API не вернул данные, используем базовую информацию
         url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
         text = manager.text_message.get("user_started_bot")
         text = text.format(name=hlink(user_data.full_name, url), id=user_data.id)
 
-    # Создаем кнопку "Открыть в боте"
-    bot_username = manager.config.api.BOT_USERNAME
-    bot_link = f"https://t.me/{bot_username}?start=search_{user_data.id}"
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Открыть в боте",
-                    url=bot_link
-                )
-            ]
-        ]
-    )
+    keyboard = await build_topic_keyboard(manager, user_data.id)
 
     sent_message = await message.bot.send_message(
         chat_id=manager.config.bot.GROUP_ID,
@@ -72,7 +75,6 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
         parse_mode="HTML"
     )
 
-    # Pin the message
     await sent_message.pin()
 
 
