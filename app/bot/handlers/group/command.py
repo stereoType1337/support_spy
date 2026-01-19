@@ -21,6 +21,16 @@ router_id.message.filter(
 )
 
 
+def _is_admin(message: Message, manager: Manager) -> bool:
+    if not message.from_user:
+        return False
+    return (
+        message.from_user.id == manager.config.bot.DEV_ID
+        or message.from_user.id in manager.config.bot.ADMIN_IDS
+    )
+
+
+
 @router_id.message(Command("id"))
 async def handler(message: Message) -> None:
     """
@@ -190,7 +200,7 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisSt
 
 
 @router.message(Command("edit"))
-async def edit_presets(message: Message) -> None:
+async def edit_presets(message: Message, manager: Manager) -> None:
     """
     /edit — manage presets stored in ans_presets.json
 
@@ -203,6 +213,10 @@ async def edit_presets(message: Message) -> None:
       /edit reload
     """
     global _PRESETS_CACHE
+
+    if not _is_admin(message, manager):
+        await message.reply("⛔️ Недостаточно прав.")
+        return
 
     parts = (message.text or "").split(maxsplit=3)
     action = parts[1].lower() if len(parts) > 1 else "list"

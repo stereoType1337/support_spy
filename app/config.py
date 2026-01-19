@@ -3,57 +3,35 @@ from dataclasses import dataclass
 from environs import Env
 
 
+def parse_admin_ids(raw: str) -> set[int]:
+    if not raw:
+        return set()
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    return {int(p) for p in parts}
+
+
 @dataclass
 class BotConfig:
-    """
-    Data class representing the configuration for the bot.
 
-    Attributes:
-    - TOKEN (str): The bot token.
-    - DEV_ID (int): The developer's user ID.
-    - GROUP_ID (int): The group chat ID.
-    - BOT_EMOJI_ID (str): The custom emoji ID for the group's topic.
-    """
     TOKEN: str
     DEV_ID: int
     GROUP_ID: int
     BOT_EMOJI_ID: str
+    ADMIN_IDS: set[int]  # <-- NEW
 
 
 @dataclass
 class RedisConfig:
-    """
-    Data class representing the configuration for Redis.
-
-    Attributes:
-    - HOST (str): The Redis host.
-    - PORT (int): The Redis port.
-    - DB (int): The Redis database number.
-    """
     HOST: str
     PORT: int
     DB: int
 
     def dsn(self) -> str:
-        """
-        Generates a Redis connection DSN (Data Source Name) using the provided host, port, and database.
-
-        :return: The generated DSN.
-        """
         return f"redis://{self.HOST}:{self.PORT}/{self.DB}"
 
 
 @dataclass
 class ApiConfig:
-    """
-    Data class representing the configuration for API.
-
-    Attributes:
-    - URL (str): The API base URL.
-    - TOKEN (str): The API token.
-    - ADMIN_TG_ID (int): The admin Telegram ID for API requests.
-    - BOT_USERNAME (str): The bot username for generating links.
-    """
     URL: str
     TOKEN: str
     ADMIN_TG_ID: int
@@ -62,27 +40,16 @@ class ApiConfig:
 
 @dataclass
 class Config:
-    """
-    Data class representing the overall configuration for the application.
-
-    Attributes:
-    - bot (BotConfig): The bot configuration.
-    - redis (RedisConfig): The Redis configuration.
-    - api (ApiConfig): The API configuration.
-    """
     bot: BotConfig
     redis: RedisConfig
     api: ApiConfig
 
 
 def load_config() -> Config:
-    """
-    Load the configuration from environment variables and return a Config object.
-
-    :return: The Config object with loaded configuration.
-    """
     env = Env()
     env.read_env()
+
+    admin_ids_raw = env.str("BOT_ADMIN_IDS", default="")
 
     return Config(
         bot=BotConfig(
@@ -90,6 +57,7 @@ def load_config() -> Config:
             DEV_ID=env.int("BOT_DEV_ID"),
             GROUP_ID=env.int("BOT_GROUP_ID"),
             BOT_EMOJI_ID=env.str("BOT_EMOJI_ID"),
+            ADMIN_IDS=parse_admin_ids(admin_ids_raw),
         ),
         redis=RedisConfig(
             HOST=env.str("REDIS_HOST"),
