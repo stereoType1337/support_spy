@@ -14,6 +14,7 @@ from app.bot.utils.create_forum_topic import (
 )
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
+from app.bot.utils.redis.stats import StatsStorage
 
 router = Router()
 router.message.filter(F.chat.type == "private", StateFilter(None))
@@ -44,6 +45,7 @@ async def handle_incoming_message(
         message: Message,
         manager: Manager,
         redis: RedisStorage,
+        stats_storage: StatsStorage,
         user_data: UserData,
         album: Album | None = None,
 ) -> None:
@@ -100,6 +102,16 @@ async def handle_incoming_message(
             await copy_message_to_topic()
         else:
             raise
+
+    # Record stats for this topic
+    if user_data.message_thread_id:
+        await stats_storage.create_or_update_topic(
+            user_id=user_data.id,
+            user_name=user_data.full_name,
+            username=user_data.username,
+            message_thread_id=user_data.message_thread_id,
+            group_id=manager.config.bot.GROUP_ID,
+        )
 
     # Send a confirmation message to the user
     text = manager.text_message.get("message_sent")

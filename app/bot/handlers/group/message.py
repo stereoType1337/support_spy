@@ -12,6 +12,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.bot.manager import Manager
 from app.bot.types.album import Album
 from app.bot.utils.redis import RedisStorage
+from app.bot.utils.redis.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
 from app.bot.utils.api import get_user_info, get_user_keys, format_user_info_message
 from app.bot.handlers.group.command import get_presets, ANS_CB_PREFIX
@@ -91,7 +92,7 @@ async def handler(message: Message) -> None:
 
 @router.message(F.media_group_id, F.from_user[F.is_bot.is_(False)])
 @router.message(F.media_group_id.is_(None), F.from_user[F.is_bot.is_(False)])
-async def handler(message: Message, manager: Manager, redis: RedisStorage, album: Optional[Album] = None) -> None:
+async def handler(message: Message, manager: Manager, redis: RedisStorage, stats_storage: StatsStorage, album: Optional[Album] = None) -> None:
     """
     Handles user messages and sends them to the respective user.
     If silent mode is enabled for the user, the messages are ignored.
@@ -120,6 +121,15 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage, album
         user_data.has_bot_replied = True
         user_data.has_sent_message = False
         await redis.update_user(user_data.id, user_data)
+
+        # Записываем статистику ответа
+        if message.message_thread_id:
+            await stats_storage.record_response(
+                message_thread_id=message.message_thread_id,
+                responder_id=message.from_user.id,
+                responder_name=message.from_user.full_name,
+            )
+
         emoji = "🔑"
         full_name = clean_name(user_data.full_name) or "Пользователь"
         new_title = f"{full_name} {emoji}"

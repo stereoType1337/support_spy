@@ -60,12 +60,14 @@ async def setup(bot: Bot, config: Config) -> None:
             [
                 BotCommand(command="newsletter", description="Newsletter menu"),
                 BotCommand(command="delete_topics", description="Delete topics by date range (DD.MM.YYYY-DD.MM.YYYY)"),
+                BotCommand(command="stats", description="Support statistics"),
             ],
         "ru":
             commands["ru"].copy() +
             [
                 BotCommand(command="newsletter", description="Меню рассылки"),
                 BotCommand(command="delete_topics", description="Удалить топики за период (DD.MM.YYYY-DD.MM.YYYY)"),
+                BotCommand(command="stats", description="Статистика поддержки"),
             ],
     }
 
@@ -83,6 +85,21 @@ async def setup(bot: Bot, config: Config) -> None:
         )
     except TelegramBadRequest:
         raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.")
+
+    # Set commands for all admins from ADMIN_IDS
+    for admin_id in config.bot.ADMIN_IDS:
+        try:
+            await bot.set_my_commands(
+                commands=admin_commands["en"],
+                scope=BotCommandScopeChat(chat_id=admin_id),
+            )
+            await bot.set_my_commands(
+                commands=admin_commands["ru"],
+                scope=BotCommandScopeChat(chat_id=admin_id),
+                language_code="ru",
+            )
+        except TelegramBadRequest:
+            pass  # Admin might not have started the bot yet
 
     # Set commands for all private chats in English language
     await bot.set_my_commands(
