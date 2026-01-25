@@ -54,34 +54,28 @@ async def setup(bot: Bot, config: Config) -> None:
         ]
     }
 
-    # Commands for DEV_ID (without stats)
+    # Commands for DEV_ID (with stats)
     dev_commands = {
         "en":
             commands["en"].copy() +
             [
                 BotCommand(command="newsletter", description="Newsletter menu"),
                 BotCommand(command="delete_topics", description="Delete topics by date range (DD.MM.YYYY-DD.MM.YYYY)"),
+                BotCommand(command="stats", description="Support statistics"),
             ],
         "ru":
             commands["ru"].copy() +
             [
                 BotCommand(command="newsletter", description="Меню рассылки"),
                 BotCommand(command="delete_topics", description="Удалить топики за период (DD.MM.YYYY-DD.MM.YYYY)"),
+                BotCommand(command="stats", description="Статистика поддержки"),
             ],
     }
 
-    # Commands for ADMIN_IDS (with stats)
+    # Commands for ADMIN_IDS (without dev commands)
     admin_commands = {
-        "en":
-            commands["en"].copy() +
-            [
-                BotCommand(command="stats", description="Support statistics"),
-            ],
-        "ru":
-            commands["ru"].copy() +
-            [
-                BotCommand(command="stats", description="Статистика поддержки"),
-            ],
+        "en": commands["en"].copy(),
+        "ru": commands["ru"].copy(),
     }
 
     try:
