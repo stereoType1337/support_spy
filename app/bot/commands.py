@@ -54,32 +54,44 @@ async def setup(bot: Bot, config: Config) -> None:
         ]
     }
 
-    admin_commands = {
+    # Commands for DEV_ID (without stats)
+    dev_commands = {
         "en":
             commands["en"].copy() +
             [
                 BotCommand(command="newsletter", description="Newsletter menu"),
                 BotCommand(command="delete_topics", description="Delete topics by date range (DD.MM.YYYY-DD.MM.YYYY)"),
-                BotCommand(command="stats", description="Support statistics"),
             ],
         "ru":
             commands["ru"].copy() +
             [
                 BotCommand(command="newsletter", description="Меню рассылки"),
                 BotCommand(command="delete_topics", description="Удалить топики за период (DD.MM.YYYY-DD.MM.YYYY)"),
+            ],
+    }
+
+    # Commands for ADMIN_IDS (with stats)
+    admin_commands = {
+        "en":
+            commands["en"].copy() +
+            [
+                BotCommand(command="stats", description="Support statistics"),
+            ],
+        "ru":
+            commands["ru"].copy() +
+            [
                 BotCommand(command="stats", description="Статистика поддержки"),
             ],
     }
 
     try:
-        # Set commands for dev or admin in English language
+        # Set commands for dev
         await bot.set_my_commands(
-            commands=admin_commands["en"],
+            commands=dev_commands["en"],
             scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
         )
-        # Set commands for dev or admin in Russian language
         await bot.set_my_commands(
-            commands=admin_commands["ru"],
+            commands=dev_commands["ru"],
             scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
             language_code="ru",
         )

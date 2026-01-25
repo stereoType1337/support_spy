@@ -70,7 +70,7 @@ def format_stats_message(stats: dict, period_name: str) -> str:
 
 @router.message(
     Command("stats"),
-    MagicData(F.event_from_user.id.in_(F.config.bot.ADMIN_IDS) | (F.event_from_user.id == F.config.bot.DEV_ID)),
+    MagicData(F.event_from_user.id.in_(F.config.bot.ADMIN_IDS)),
 )
 async def handle_stats_command(message: Message, manager: Manager, stats_storage: StatsStorage) -> None:
     """Handle /stats command - show statistics menu."""
