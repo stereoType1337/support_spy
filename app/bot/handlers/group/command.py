@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,8 @@ from aiogram.utils.text_decorations import html_decoration as hd
 
 from app.bot.manager import Manager
 from app.bot.utils.redis import RedisStorage
+from app.bot.utils.redis.stats import StatsStorage
+from app.bot.utils.create_forum_topic import edit_forum_topic_title
 
 router_id = Router()
 router_id.message.filter(
@@ -109,6 +112,10 @@ async def save_presets(presets: dict[str, str]) -> None:
     tmp.replace(PRESETS_FILE)
 
 
+def _clean_name(name: str) -> str:
+    return re.sub(r'[\s📚✅⏰🔑]+$', '', name or '')
+
+
 def build_ans_keyboard(presets: dict[str, str]) -> InlineKeyboardBuilder:
     """
     Builds inline keyboard from presets keys.
@@ -145,7 +152,7 @@ async def ans_command(message: Message, redis: RedisStorage) -> None:
     F.data.startswith(ANS_CB_PREFIX),
     MagicData(F.event_chat.id == F.config.bot.GROUP_ID),  # type: ignore
 )
-async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisStorage) -> None:
+async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisStorage, stats_storage: StatsStorage) -> None:
     """
     On preset button click: sends preset text to user напрямую, и подтверждает в топике.
     """
@@ -188,6 +195,30 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisSt
     except Exception:
         ok = False
         error_text = manager.text_message.get("message_not_sent")
+
+    if ok:
+        # Обновляем статус диалога
+        user_data.has_bot_replied = True
+        user_data.has_sent_message = False
+        await redis.update_user(user_data.id, user_data)
+
+        # Засчитываем ответ админу в статистику
+        if callback.message.message_thread_id and callback.from_user:
+            await stats_storage.record_response(
+                message_thread_id=callback.message.message_thread_id,
+                responder_id=callback.from_user.id,
+                responder_name=callback.from_user.full_name,
+            )
+
+        # Переименовываем тему (эмодзи 🔑)
+        full_name = _clean_name(user_data.full_name) or "Пользователь"
+        new_title = f"{full_name} 🔑"
+        print(f"[DEBUG] Переименовываем тему (пресет): {new_title}")
+        if user_data.message_thread_id:
+            try:
+                await edit_forum_topic_title(callback.bot, manager.config, user_data.message_thread_id, new_title)
+            except Exception:
+                pass
 
     confirm = (
         f"✅ Отправлено пользователю пресетом: {hbold(hd.quote(preset_key))}"
