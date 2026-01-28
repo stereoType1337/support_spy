@@ -221,7 +221,7 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisSt
                 pass
 
     confirm = (
-        f"✅ Отправлено пользователю пресетом: {hbold(hd.quote(preset_key))}"
+        f"✅ Отправлено пользователю пресетом:\n{hd.quote(preset_text)}"
         if ok
         else f"❌ Не удалось отправить: {hd.quote(error_text or 'ошибка')}"
     )
