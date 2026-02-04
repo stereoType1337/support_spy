@@ -135,6 +135,42 @@ def build_ans_keyboard(presets: dict[str, str | dict]) -> InlineKeyboardBuilder:
     return kb
 
 
+@router.message(Command("help"))
+async def help_command(message: Message, manager: Manager) -> None:
+    """/help — справка по командам."""
+    if not _is_admin(message, manager):
+        await message.reply("⛔️ Недостаточно прав.")
+        return
+
+    text = """<b>📚 Справка по командам</b>
+
+<b>Пресеты (быстрые ответы):</b>
+• /ans — показать кнопки с пресетами
+• /add [key] [текст] — добавить текстовый пресет
+• /add [key] (ответом на фото) — добавить фото-пресет
+• /add [key] (ответом на сообщение) — взять текст из сообщения
+• /del [key] — удалить пресет
+• /list — список всех пресетов
+• /show [key] — показать содержимое пресета
+
+<b>Управление пользователем:</b>
+• /ban — заблокировать/разблокировать
+• /silent — включить/выключить тихий режим
+• /information — информация о пользователе
+
+<b>Примеры добавления пресетов:</b>
+<code>/add привет Здравствуйте! Чем могу помочь?</code>
+<code>/add инструкция</code> (ответом на сообщение с текстом)
+<code>/add скрин</code> (ответом на фото)
+
+<b>Советы:</b>
+• Ключ пресета автоматически приводится к нижнему регистру
+• Пробелы в ключе заменяются на _
+• Для перезагрузки пресетов из файла: /edit reload"""
+
+    await message.reply(text, parse_mode="HTML")
+
+
 @router.message(Command("ans"))
 async def ans_command(message: Message, redis: RedisStorage) -> None:
     """
@@ -302,7 +338,7 @@ async def _add_preset(message: Message, manager: Manager, key: str, extra_text: 
 @router.message(Command("add"))
 async def add_preset_command(message: Message, manager: Manager) -> None:
     """
-    /add [key] [text] — упрощённая команда для добавления пресета.
+    /add [key] [text] — добавить пресет.
     Можно использовать ответом на сообщение/фото.
     """
     if not _is_admin(message, manager):
@@ -321,6 +357,83 @@ async def add_preset_command(message: Message, manager: Manager) -> None:
     key = parts[1]
     extra_text = parts[2].strip() if len(parts) > 2 else None
     await _add_preset(message, manager, key, extra_text)
+
+
+@router.message(Command("del"))
+async def del_preset_command(message: Message, manager: Manager) -> None:
+    """/del [key] — удалить пресет."""
+    global _PRESETS_CACHE
+
+    if not _is_admin(message, manager):
+        await message.reply("⛔️ Недостаточно прав.")
+        return
+
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.reply("Использование: /del [key]")
+        return
+
+    key = _normalize_key(parts[1])
+
+    async with _PRESETS_LOCK:
+        if _PRESETS_CACHE is None:
+            _PRESETS_CACHE = await _load_presets_from_disk()
+
+        if key not in _PRESETS_CACHE:
+            await message.reply("Такого пресета нет.")
+            return
+
+        _PRESETS_CACHE.pop(key, None)
+        await save_presets(_PRESETS_CACHE)
+
+    await message.reply(f"✅ Удалил пресет: {hbold(hd.quote(key))}")
+
+
+@router.message(Command("list"))
+async def list_presets_command(message: Message, manager: Manager) -> None:
+    """/list — показать все пресеты."""
+    if not _is_admin(message, manager):
+        await message.reply("⛔️ Недостаточно прав.")
+        return
+
+    presets = await get_presets()
+    if not presets:
+        await message.reply("Пресетов нет. Добавь через /add [key] [text].")
+        return
+
+    keys = "\n".join(f"• {hd.quote(k)}" for k in sorted(presets.keys()))
+    await message.reply(f"Пресеты ({len(presets)}):\n{keys}")
+
+
+@router.message(Command("show"))
+async def show_preset_command(message: Message, manager: Manager) -> None:
+    """/show [key] — показать содержимое пресета."""
+    if not _is_admin(message, manager):
+        await message.reply("⛔️ Недостаточно прав.")
+        return
+
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.reply("Использование: /show [key]")
+        return
+
+    key = _normalize_key(parts[1])
+    presets = await get_presets()
+    value = presets.get(key)
+
+    if not value:
+        await message.reply("Пресет не найден.")
+        return
+
+    if isinstance(value, dict):
+        text = value.get("text", "")
+        photo_id = value.get("photo_file_id")
+        if photo_id:
+            await message.reply_photo(photo=photo_id, caption=f"{hbold(hd.quote(key))}:\n{text or '[без текста]'}")
+        else:
+            await message.reply(f"{hbold(hd.quote(key))}:\n{hd.quote(text)}")
+    else:
+        await message.reply(f"{hbold(hd.quote(key))}:\n{hd.quote(value)}")
 
 
 @router.message(Command("edit"))

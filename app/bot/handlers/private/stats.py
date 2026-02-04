@@ -1,4 +1,3 @@
-import io
 from datetime import datetime, timezone, timedelta
 
 from aiogram import Router, F
@@ -111,7 +110,7 @@ async def handle_stats_period(call: CallbackQuery, stats_storage: StatsStorage) 
 
 
 @router.callback_query(F.data.startswith(STATS_CSV_PREFIX))
-async def handle_stats_csv(call: CallbackQuery, manager: Manager, stats_storage: StatsStorage) -> None:
+async def handle_stats_csv(call: CallbackQuery, stats_storage: StatsStorage) -> None:
     """Handle CSV export request."""
     period = call.data.replace(STATS_CSV_PREFIX, "")
 
@@ -122,21 +121,7 @@ async def handle_stats_csv(call: CallbackQuery, manager: Manager, stats_storage:
         days = int(period)
         period_name = f"{days}_days"
 
-    # Получаем имена админов через Telegram API
-    admin_ids = manager.config.bot.ADMIN_IDS
-    admin_names: dict[int, str] = {}
-    for aid in admin_ids:
-        try:
-            chat = await call.bot.get_chat(aid)
-            admin_names[aid] = chat.full_name or str(aid)
-        except Exception:
-            admin_names[aid] = str(aid)
-
-    csv_content = await stats_storage.export_topics_csv(
-        days=days,
-        admin_ids=admin_ids,
-        admin_names=admin_names,
-    )
+    csv_content = await stats_storage.export_topics_csv(days=days)
 
     # Создаем файл
     now = datetime.now(timezone(timedelta(hours=3)))

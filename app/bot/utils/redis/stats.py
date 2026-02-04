@@ -218,54 +218,62 @@ class StatsStorage:
             "responder_stats": responder_stats,
         }
 
-    async def export_topics_csv(
-        self,
-        days: int | None = None,
-        admin_ids: set[int] | None = None,
-        admin_names: dict[int, str] | None = None,
-    ) -> str:
-        """Export topics to CSV format with per-admin response columns."""
+    async def export_topics_csv(self, days: int | None = None) -> str:
+        """Export topics to CSV format with per-responder columns."""
         topics = await self.get_all_topics()
+        messages = await self.get_all_messages()
 
         now = datetime.now(timezone(timedelta(hours=3)))
-        if days:
-            cutoff = now - timedelta(days=days)
-        else:
-            cutoff = None
+        cutoff = now - timedelta(days=days) if days else None
 
-        # Формируем заголовок: если есть admin_ids — по столбцу на админа, иначе — старый формат
-        sorted_admin_ids = sorted(admin_ids) if admin_ids else []
-        if sorted_admin_ids and admin_names:
-            admin_columns = [admin_names.get(aid, str(aid)).replace(",", " ").replace('"', "'") for aid in sorted_admin_ids]
-            header = "user_id,user_name,username,topic_link,created_at,updated_at,total_messages," + ",".join(f'"{col}"' for col in admin_columns)
-        else:
-            header = "user_id,user_name,username,topic_link,created_at,updated_at,total_messages,responders"
-
-        lines = [header]
-
+        # Фильтруем топики по периоду
+        filtered_topics: List[TopicStats] = []
         for topic in topics:
             try:
                 updated = datetime.strptime(topic.updated_at, "%Y-%m-%d %H:%M:%S")
                 updated = updated.replace(tzinfo=timezone(timedelta(hours=3)))
             except Exception:
                 continue
+            if cutoff is None or updated >= cutoff:
+                filtered_topics.append(topic)
 
-            if cutoff is not None and updated < cutoff:
+        # Собираем всех респондентов за период и их имена
+        responder_names: Dict[str, str] = {}
+        for msg in messages:
+            try:
+                timestamp = datetime.strptime(msg["timestamp"], "%Y-%m-%d %H:%M:%S")
+                timestamp = timestamp.replace(tzinfo=timezone(timedelta(hours=3)))
+            except Exception:
                 continue
+            if cutoff is not None and timestamp < cutoff:
+                continue
+            resp_id = str(msg["responder_id"])
+            resp_name = msg.get("responder_name", resp_id)
+            responder_names[resp_id] = resp_name
 
-            # Экранируем запятые в имени
+        # Сортируем респондентов по ID
+        sorted_responder_ids = sorted(responder_names.keys(), key=lambda x: int(x))
+
+        # Формируем заголовок
+        if sorted_responder_ids:
+            responder_columns = [responder_names[rid].replace(",", " ").replace('"', "'") for rid in sorted_responder_ids]
+            header = "user_id,user_name,username,topic_link,created_at,updated_at,total_messages," + ",".join(f'"{col}"' for col in responder_columns)
+        else:
+            header = "user_id,user_name,username,topic_link,created_at,updated_at,total_messages"
+
+        lines = [header]
+
+        for topic in filtered_topics:
             user_name = topic.user_name.replace(",", " ").replace('"', "'")
             username = (topic.username or "-").replace(",", " ")
 
             base = f'{topic.user_id},"{user_name}",{username},{topic.topic_link},{topic.created_at},{topic.updated_at},{topic.total_messages}'
 
-            if sorted_admin_ids and admin_names:
-                # По столбцу на каждого админа
-                counts = [str(topic.responder_counts.get(str(aid), 0)) for aid in sorted_admin_ids]
+            if sorted_responder_ids:
+                counts = [str(topic.responder_counts.get(rid, 0)) for rid in sorted_responder_ids]
                 line = base + "," + ",".join(counts)
             else:
-                responders = "; ".join([f"{k}:{v}" for k, v in topic.responder_counts.items()])
-                line = base + f',"{responders}"'
+                line = base
 
             lines.append(line)
 

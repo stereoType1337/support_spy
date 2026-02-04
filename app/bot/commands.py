@@ -41,16 +41,26 @@ async def setup(bot: Bot, config: Config) -> None:
 
     group_commands = {
         "en": [
-            BotCommand(command="ban", description="Block/Unblock a user"),
-            BotCommand(command="silent", description="Activate/Deactivate silent Mode"),
-            BotCommand(command="information", description="User information"),
+            BotCommand(command="help", description="Commands guide"),
+            BotCommand(command="ans", description="Send preset"),
+            BotCommand(command="add", description="Add preset"),
+            BotCommand(command="del", description="Delete preset"),
+            BotCommand(command="list", description="List presets"),
+            BotCommand(command="show", description="Show preset"),
+            BotCommand(command="ban", description="Block/Unblock user"),
+            BotCommand(command="silent", description="Silent mode on/off"),
+            BotCommand(command="information", description="User info"),
         ],
         "ru": [
-            BotCommand(command="ban", description="Заблокировать/Разблокировать пользователя"),
-            BotCommand(command="silent", description="Активировать/Деактивировать тихий режим"),
-            BotCommand(command="information", description="Информация о пользователе"),
-            BotCommand(command="ans", description="Список пресетов"),
-            BotCommand(command="edit", description="Изменить пресеты"),
+            BotCommand(command="help", description="Справка по командам"),
+            BotCommand(command="ans", description="Отправить пресет"),
+            BotCommand(command="add", description="Добавить пресет"),
+            BotCommand(command="del", description="Удалить пресет"),
+            BotCommand(command="list", description="Список пресетов"),
+            BotCommand(command="show", description="Показать пресет"),
+            BotCommand(command="ban", description="Бан/разбан"),
+            BotCommand(command="silent", description="Тихий режим"),
+            BotCommand(command="information", description="Инфо о пользователе"),
         ]
     }
 
