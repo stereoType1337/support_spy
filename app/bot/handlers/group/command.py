@@ -52,16 +52,17 @@ router.message.filter(
 ANS_CB_PREFIX = "ans:"
 PRESETS_FILE = Path(__file__).with_name("ans_presets.json")
 _PRESETS_LOCK = asyncio.Lock()
-_PRESETS_CACHE: dict[str, str] | None = None
+_PRESETS_CACHE: dict[str, str | dict] | None = None
 
 
 def _normalize_key(key: str) -> str:
     return key.strip().lower().replace(" ", "_")
 
 
-async def _load_presets_from_disk() -> dict[str, str]:
+async def _load_presets_from_disk() -> dict[str, str | dict]:
     """
     Reads presets JSON from disk. If file doesn't exist, creates an empty one.
+    Supports both string values and dict values with text/photo_file_id.
     """
     if not PRESETS_FILE.exists():
         PRESETS_FILE.write_text("{}", encoding="utf-8")
@@ -74,17 +75,21 @@ async def _load_presets_from_disk() -> dict[str, str]:
     if not isinstance(data, dict):
         raise ValueError("ans_presets.json must contain a JSON object (dict)")
 
-    out: dict[str, str] = {}
+    out: dict[str, str | dict] = {}
     for k, v in data.items():
-        if not isinstance(k, str) or not isinstance(v, str):
+        if not isinstance(k, str):
             continue
         nk = _normalize_key(k)
-        if nk:
+        if not nk:
+            continue
+        if isinstance(v, str):
+            out[nk] = v
+        elif isinstance(v, dict) and ("text" in v or "photo_file_id" in v):
             out[nk] = v
     return out
 
 
-async def get_presets() -> dict[str, str]:
+async def get_presets() -> dict[str, str | dict]:
     """
     Cached presets read; reloadable.
     """
@@ -95,14 +100,14 @@ async def get_presets() -> dict[str, str]:
         return dict(_PRESETS_CACHE)
 
 
-async def reload_presets() -> dict[str, str]:
+async def reload_presets() -> dict[str, str | dict]:
     global _PRESETS_CACHE
     async with _PRESETS_LOCK:
         _PRESETS_CACHE = await _load_presets_from_disk()
         return dict(_PRESETS_CACHE)
 
 
-async def save_presets(presets: dict[str, str]) -> None:
+async def save_presets(presets: dict[str, str | dict]) -> None:
     """
     Atomic-ish save to disk (write temp then replace).
     """
@@ -116,7 +121,7 @@ def _clean_name(name: str) -> str:
     return re.sub(r'[\s📚✅⏰🔑]+$', '', name or '')
 
 
-def build_ans_keyboard(presets: dict[str, str]) -> InlineKeyboardBuilder:
+def build_ans_keyboard(presets: dict[str, str | dict]) -> InlineKeyboardBuilder:
     """
     Builds inline keyboard from presets keys.
     """
@@ -164,10 +169,18 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisSt
     preset_key = _normalize_key(preset_key)
 
     presets = await get_presets()
-    preset_text = presets.get(preset_key)
-    if not preset_text:
+    preset_value = presets.get(preset_key)
+    if not preset_value:
         await callback.answer("Пресет не найден (возможно обновили файл). Нажми /ans заново.", show_alert=True)
         return
+
+    # Определяем текст и photo_file_id из пресета
+    if isinstance(preset_value, dict):
+        preset_text = preset_value.get("text", "")
+        photo_file_id = preset_value.get("photo_file_id")
+    else:
+        preset_text = preset_value
+        photo_file_id = None
 
     user_data = await redis.get_by_message_thread_id(callback.message.message_thread_id)
     if not user_data:
@@ -185,7 +198,14 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisSt
     error_text: str | None = None
 
     try:
-        await callback.bot.send_message(chat_id=user_data.id, text=preset_text)
+        if photo_file_id:
+            await callback.bot.send_photo(
+                chat_id=user_data.id,
+                photo=photo_file_id,
+                caption=preset_text or None,
+            )
+        else:
+            await callback.bot.send_message(chat_id=user_data.id, text=preset_text)
     except TelegramAPIError as ex:
         ok = False
         if "blocked" in (ex.message or ""):
@@ -220,14 +240,87 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisSt
             except Exception:
                 pass
 
-    confirm = (
-        f"✅ Отправлено пользователю пресетом:\n{hd.quote(preset_text)}"
-        if ok
-        else f"❌ Не удалось отправить: {hd.quote(error_text or 'ошибка')}"
-    )
+    # Подтверждение в топике
+    if ok:
+        display_text = f"[Фото] {preset_text}" if photo_file_id and preset_text else "[Фото]" if photo_file_id else preset_text
+        confirm = f"✅ Отправлено пользователю пресетом:\n{hd.quote(display_text)}"
+    else:
+        confirm = f"❌ Не удалось отправить: {hd.quote(error_text or 'ошибка')}"
 
     with suppress(TelegramBadRequest):
         await callback.message.reply(confirm)
+
+
+async def _add_preset(message: Message, manager: Manager, key: str, extra_text: str | None = None) -> None:
+    """Универсальная функция добавления пресета."""
+    global _PRESETS_CACHE
+
+    key = _normalize_key(key)
+    if not key:
+        await message.reply("Ключ пустой/некорректный.")
+        return
+
+    reply = message.reply_to_message
+    value: str | dict | None = None
+    label: str = ""
+
+    # 1. Ответ на фото
+    if reply and reply.photo:
+        file_id = reply.photo[-1].file_id
+        caption = reply.caption or extra_text or ""
+        value = {"text": caption, "photo_file_id": file_id}
+        label = f"[Фото] {caption}" if caption else "[Фото]"
+
+    # 2. Ответ на текстовое сообщение
+    elif reply and reply.text:
+        value = reply.text
+        label = value[:50] + "..." if len(value) > 50 else value
+
+    # 3. Текст в самой команде
+    elif extra_text:
+        value = extra_text
+        label = value[:50] + "..." if len(value) > 50 else value
+
+    if not value:
+        await message.reply(
+            "Использование:\n"
+            "• /add [key] [text] — текст в команде\n"
+            "• /add [key] (ответом на сообщение) — текст из ответа\n"
+            "• /add [key] (ответом на фото) — фото с подписью"
+        )
+        return
+
+    async with _PRESETS_LOCK:
+        if _PRESETS_CACHE is None:
+            _PRESETS_CACHE = await _load_presets_from_disk()
+        _PRESETS_CACHE[key] = value
+        await save_presets(_PRESETS_CACHE)
+
+    await message.reply(f"✅ Сохранил пресет: {hbold(hd.quote(key))}\n{hd.quote(label)}")
+
+
+@router.message(Command("add"))
+async def add_preset_command(message: Message, manager: Manager) -> None:
+    """
+    /add [key] [text] — упрощённая команда для добавления пресета.
+    Можно использовать ответом на сообщение/фото.
+    """
+    if not _is_admin(message, manager):
+        await message.reply("⛔️ Недостаточно прав.")
+        return
+
+    parts = (message.text or "").split(maxsplit=2)
+    if len(parts) < 2:
+        await message.reply(
+            "Использование:\n"
+            "• /add [key] [text]\n"
+            "• /add [key] (ответом на сообщение/фото)"
+        )
+        return
+
+    key = parts[1]
+    extra_text = parts[2].strip() if len(parts) > 2 else None
+    await _add_preset(message, manager, key, extra_text)
 
 
 @router.message(Command("edit"))
@@ -236,10 +329,9 @@ async def edit_presets(message: Message, manager: Manager) -> None:
     /edit — manage presets stored in ans_presets.json
 
     Commands:
-      /edit
       /edit list
       /edit show [key]
-      /edit add [key] [text...]
+      /edit add [key] [text] (или ответом на сообщение)
       /edit del [key]
       /edit reload
     """
@@ -255,11 +347,13 @@ async def edit_presets(message: Message, manager: Manager) -> None:
     if action in {"help", "h", "?"}:
         await message.reply(
             "Управление пресетами:\n"
-            "• /edit list\n"
-            "• /edit show [key]\n"
-            "• /edit add [key] [text]\n"
-            "• /edit del [key]\n"
-            "• /edit reload"
+            "• /edit list — список пресетов\n"
+            "• /edit show [key] — показать пресет\n"
+            "• /edit del [key] — удалить пресет\n"
+            "• /edit reload — перечитать файл\n\n"
+            "Добавление пресетов:\n"
+            "• /add [key] [text]\n"
+            "• /add [key] (ответом на сообщение/фото)"
         )
         return
 
@@ -275,7 +369,7 @@ async def edit_presets(message: Message, manager: Manager) -> None:
     if action in {"list", "ls"}:
         presets = await get_presets()
         if not presets:
-            await message.reply("Пресетов нет. Добавь через /edit add [key] [text].")
+            await message.reply("Пресетов нет. Добавь через /add [key] [text].")
             return
         keys = "\n".join(f"• {hd.quote(k)}" for k in sorted(presets.keys()))
         await message.reply(f"Пресеты ({len(presets)}):\n{keys}")
@@ -287,11 +381,17 @@ async def edit_presets(message: Message, manager: Manager) -> None:
             return
         key = _normalize_key(parts[2])
         presets = await get_presets()
-        text = presets.get(key)
-        if not text:
+        value = presets.get(key)
+        if not value:
             await message.reply("Не найдено.")
             return
-        await message.reply(f"{hbold(hd.quote(key))}:\n{hd.quote(text)}")
+        if isinstance(value, dict):
+            text = value.get("text", "")
+            has_photo = "photo_file_id" in value
+            display = f"[Фото] {text}" if has_photo and text else "[Фото]" if has_photo else text
+            await message.reply(f"{hbold(hd.quote(key))}:\n{hd.quote(display)}")
+        else:
+            await message.reply(f"{hbold(hd.quote(key))}:\n{hd.quote(value)}")
         return
 
     if action == "del":
@@ -315,28 +415,12 @@ async def edit_presets(message: Message, manager: Manager) -> None:
         return
 
     if action in {"add", "set", "upd", "update"}:
-        if len(parts) < 4:
-            await message.reply("Использование: /edit add [key] [text]")
+        if len(parts) < 3:
+            await message.reply("Использование: /add [key] [text]\nИли ответом на сообщение/фото: /add [key]")
             return
-
-        key = _normalize_key(parts[2])
-        text = parts[3].strip()
-
-        if not key:
-            await message.reply("Ключ пустой/некорректный.")
-            return
-        if not text:
-            await message.reply("Текст пустой.")
-            return
-
-        async with _PRESETS_LOCK:
-            if _PRESETS_CACHE is None:
-                _PRESETS_CACHE = await _load_presets_from_disk()
-
-            _PRESETS_CACHE[key] = text
-            await save_presets(_PRESETS_CACHE)
-
-        await message.reply(f"✅ Сохранил пресет: {hbold(hd.quote(key))}")
+        key = parts[2]
+        extra_text = parts[3].strip() if len(parts) > 3 else None
+        await _add_preset(message, manager, key, extra_text)
         return
 
     await message.reply("Неизвестная команда. Напиши /edit help.")

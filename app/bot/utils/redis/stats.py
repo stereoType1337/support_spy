@@ -218,8 +218,13 @@ class StatsStorage:
             "responder_stats": responder_stats,
         }
 
-    async def export_topics_csv(self, days: int | None = None) -> str:
-        """Export topics to CSV format."""
+    async def export_topics_csv(
+        self,
+        days: int | None = None,
+        admin_ids: set[int] | None = None,
+        admin_names: dict[int, str] | None = None,
+    ) -> str:
+        """Export topics to CSV format with per-admin response columns."""
         topics = await self.get_all_topics()
 
         now = datetime.now(timezone(timedelta(hours=3)))
@@ -228,26 +233,40 @@ class StatsStorage:
         else:
             cutoff = None
 
-        lines = ["user_id,user_name,username,topic_link,created_at,updated_at,total_messages,responders"]
+        # Формируем заголовок: если есть admin_ids — по столбцу на админа, иначе — старый формат
+        sorted_admin_ids = sorted(admin_ids) if admin_ids else []
+        if sorted_admin_ids and admin_names:
+            admin_columns = [admin_names.get(aid, str(aid)).replace(",", " ").replace('"', "'") for aid in sorted_admin_ids]
+            header = "user_id,user_name,username,topic_link,created_at,updated_at,total_messages," + ",".join(f'"{col}"' for col in admin_columns)
+        else:
+            header = "user_id,user_name,username,topic_link,created_at,updated_at,total_messages,responders"
+
+        lines = [header]
 
         for topic in topics:
             try:
-                created = datetime.strptime(topic.created_at, "%Y-%m-%d %H:%M:%S")
-                created = created.replace(tzinfo=timezone(timedelta(hours=3)))
+                updated = datetime.strptime(topic.updated_at, "%Y-%m-%d %H:%M:%S")
+                updated = updated.replace(tzinfo=timezone(timedelta(hours=3)))
             except Exception:
                 continue
 
-            if cutoff is not None and created < cutoff:
+            if cutoff is not None and updated < cutoff:
                 continue
-
-            # Форматируем респондентов
-            responders = "; ".join([f"{k}:{v}" for k, v in topic.responder_counts.items()])
 
             # Экранируем запятые в имени
             user_name = topic.user_name.replace(",", " ").replace('"', "'")
             username = (topic.username or "-").replace(",", " ")
 
-            line = f'{topic.user_id},"{user_name}",{username},{topic.topic_link},{topic.created_at},{topic.updated_at},{topic.total_messages},"{responders}"'
+            base = f'{topic.user_id},"{user_name}",{username},{topic.topic_link},{topic.created_at},{topic.updated_at},{topic.total_messages}'
+
+            if sorted_admin_ids and admin_names:
+                # По столбцу на каждого админа
+                counts = [str(topic.responder_counts.get(str(aid), 0)) for aid in sorted_admin_ids]
+                line = base + "," + ",".join(counts)
+            else:
+                responders = "; ".join([f"{k}:{v}" for k, v in topic.responder_counts.items()])
+                line = base + f',"{responders}"'
+
             lines.append(line)
 
         return "\n".join(lines)
