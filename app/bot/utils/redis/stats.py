@@ -157,7 +157,9 @@ class StatsStorage:
 
         now = datetime.now(timezone(timedelta(hours=3)))
         if days:
-            cutoff = now - timedelta(days=days)
+            # Начало календарного дня (00:00:00), а не последние N*24 часа
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            cutoff = today_start - timedelta(days=days - 1)
         else:
             cutoff = None
 
@@ -224,7 +226,12 @@ class StatsStorage:
         messages = await self.get_all_messages()
 
         now = datetime.now(timezone(timedelta(hours=3)))
-        cutoff = now - timedelta(days=days) if days else None
+        if days:
+            # Начало календарного дня (00:00:00), а не последние N*24 часа
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            cutoff = today_start - timedelta(days=days - 1)
+        else:
+            cutoff = None
 
         # Фильтруем топики по периоду
         filtered_topics: List[TopicStats] = []
@@ -239,6 +246,8 @@ class StatsStorage:
 
         # Собираем всех респондентов за период и их имена
         responder_names: Dict[str, str] = {}
+
+        # Из message_stats (там есть имена)
         for msg in messages:
             try:
                 timestamp = datetime.strptime(msg["timestamp"], "%Y-%m-%d %H:%M:%S")
@@ -250,6 +259,12 @@ class StatsStorage:
             resp_id = str(msg["responder_id"])
             resp_name = msg.get("responder_name", resp_id)
             responder_names[resp_id] = resp_name
+
+        # Также из responder_counts отфильтрованных топиков (на случай если message_stats неполный)
+        for topic in filtered_topics:
+            for resp_id in topic.responder_counts.keys():
+                if resp_id not in responder_names:
+                    responder_names[resp_id] = resp_id  # Используем ID как имя если имя неизвестно
 
         # Сортируем респондентов по ID
         sorted_responder_ids = sorted(responder_names.keys(), key=lambda x: int(x))
