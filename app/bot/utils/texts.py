@@ -57,7 +57,13 @@ class TextMessage(Text):
             "en": {
                 "select_language": "👋 <b>Hello</b>, {full_name}!\n\nSelect language:",
                 "change_language": "<b>Select language:</b>",
-                "main_menu": "<b>Write your question</b>, and we will answer you as soon as possible:",
+                "main_menu": (
+                    "<b>👋 Hello!</b>\n\n"
+                    "You've reached <b>Omni GPT</b> support.\n"
+                    "Please describe your issue — we'll get back to you shortly.\n\n"
+                    "<b>🤖 Open AI Assistant:</b>\n"
+                    "<a href=\"https://t.me/Omni1GPT_bot?start\">Omni GPT Bot</a>"
+                ),
                 "message_sent": "<b>Message sent!</b> Expect a response.",
                 "message_edited": (
                     "<b>The message was edited only in your chat.</b> "
@@ -110,27 +116,26 @@ class TextMessage(Text):
                     "<b>Silent mode deactivated!</b> The user will receive all messages."
                 ),
                 "faq_msg": (
-                    "<b>Please, before asking a question</b>, check the FAQ:\n\n"
-                    "- If VPN does not work, send a screenshot from the <b>V2RayTun</b> or <b>Happ</b> app\n\n"
-                    "- <b>This VPN only works in Russia</b>\n\n"
-                    "- <b>VPN will not work in Turkmenistan</b>\n\n"
-                    "- <b>VPN will not work in Iran</b>\n\n"
-                    "- <b>Please do not write that you are from Iran</b>\n\n"
-                    "- <b>VPN works only in Russia</b>\n\n"
-                    "- <b>All messages will be ignored</b>\n\n"
+                    "<b>Before contacting support, please check the FAQ:</b>\n\n"
+                    "1. <b>Subscription & payments</b> — if payment didn't go through or subscription wasn't activated, "
+                    "please send a screenshot of the payment.\n\n"
+                    "2. <b>AI not responding</b> — try creating a new chat or switching the model.\n\n"
+                    "3. <b>Free plan</b> — 5 requests per day with GPT-5 mini. "
+                    "Upgrade to Premium for unlimited access.\n\n"
+                    "4. <b>Referral program</b> — invite friends and get +4 bonus requests.\n\n"
+                    "<b>🤖 Open the bot:</b>\n"
+                    "<a href=\"https://t.me/Omni1GPT_bot?start\">Omni GPT</a>"
                 ),
             },
             "ru": {
                 "select_language": "👋 <b>Привет</b>, {full_name}!\n\nВыберите язык:",
                 "change_language": "<b>Выберите язык:</b>",
                 "main_menu": (
-                    "<b>👋 Здравствуйте! 🚀</b>\n\n"
-                    "Вы обратились в поддержку бота "
-                    "<a href=\"https://t.me/vpn_plus777_bot\">@vpn_plus777_bot</a>.\n"
+                    "<b>👋 Здравствуйте!</b>\n\n"
+                    "Вы обратились в поддержку <b>Omni GPT</b>.\n"
                     "Пожалуйста, опишите вашу проблему — мы ответим вам в ближайшее время.\n\n"
-                    "<b>🛒 Приобрести подписку:</b>\n"
-                    "<a href=\"https://t.me/vpn_plus777_bot?start=utm_supp\">Happ | VPN | Vless</a>\n"
-                    "⚠️ Пробный период не предоставляется.\n\n"
+                    "<b>🤖 Открыть AI Ассистента:</b>\n"
+                    "<a href=\"https://t.me/Omni1GPT_bot?start\">Omni GPT Bot</a>"
                 ),
                 "message_sent": "<b>Сообщение отправлено!</b> Ожидайте ответа.",
                 "message_edited": (
@@ -153,7 +158,6 @@ class TextMessage(Text):
                     "• /information\n"
                     "Информация о пользователе"
                     "<blockquote>Получить сообщение с основной информацией о пользователе.</blockquote>"
-
                 ),
                 "user_restarted_bot": "<b>Пользователь {name} перезапустил(а) бота!</b>",
                 "user_stopped_bot": "<b>Пользователь {name} остановил(а) бота!</b>",
@@ -183,30 +187,15 @@ class TextMessage(Text):
                     "<b>Тихий режим деактивирован!</b> Пользователь будет получать все сообщения."
                 ),
                 "faq_msg": (
-                    "<b>❗️ Перед обращением в поддержку, пожалуйста, соблюдайте правила подачи тикета:</b>\n\n"
-
-                    "1️⃣ Отправьте <b>скриншот</b> из приложения <b>Happ</b> / <b>V2RayTun</b> "
-                    "(желательно с проверкой доступности серверов):\n"
-                    "<a href=\"https://t.me/instructionsdlya/50/51\">Открыть инструкцию</a>\n\n"
-
-                    "2️⃣ <b>Обязательно укажите:</b>\n"
-                    "• Тип подключения: <i>Wi-Fi</i> или <i>мобильный интернет</i>\n"
-                    "• Ваш оператор связи\n"
-                    "• ⚠️ Включены ли глушилки интернета\n\n"
-
-                    "3️⃣ <b>Напишите, что вы уже пробовали:</b>\n"
-                    "• Перезагружали ли телефон\n"
-                    "• Переустанавливали ли приложение\n"
-                    "• Обновляли ли конфигурацию / подписку\n\n"
-
-                    "<b>🧑‍💻 Гайды:</b>\n"
-                    "• <a href=\"https://teletype.in/@vless_vpn/vYH2cx68nsr\">Настройка приложения Happ (все устройства)</a>\n"
-                    "• <a href=\"https://telegra.ph/Nastrojka-VPN-na-Windows-Koala-Clash-10-03\">Настройка на Windows</a>\n"
-                    "• <a href=\"https://teletype.in/@vless_vpn/P5arJF8pxLz\">Настройка на ТВ</a>\n"
-                    "• <a href=\"https://t.me/instructionsdlya/2/4\">Подключение второго / третьего устройства</a>\n"
-                    "• <a href=\"https://t.me/instructionsdlya/53/55\">Продление на 6–9 устройств</a>\n"
-                    "• <a href=\"https://t.me/instructionsdlya/53/55\">Удаление лишних устройств</a>"
-                )
-                ,
+                    "<b>Перед обращением в поддержку ознакомьтесь с частыми вопросами:</b>\n\n"
+                    "1. <b>Оплата и подписка</b> — если оплата не прошла или подписка не активировалась, "
+                    "пришлите скриншот оплаты.\n\n"
+                    "2. <b>ИИ не отвечает</b> — попробуйте создать новый чат или сменить модель.\n\n"
+                    "3. <b>Бесплатный тариф</b> — 5 запросов в день к GPT-5 mini. "
+                    "Оформите Premium для безлимитного доступа.\n\n"
+                    "4. <b>Реферальная программа</b> — приглашайте друзей и получайте +4 бонусных запроса.\n\n"
+                    "<b>🤖 Открыть бота:</b>\n"
+                    "<a href=\"https://t.me/Omni1GPT_bot?start\">Omni GPT</a>"
+                ),
             },
         }
