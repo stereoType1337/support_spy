@@ -10,7 +10,7 @@ services:
     volumes:
       - .:/usr/src/app
     networks:
-      - network
+      - support-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -21,8 +21,9 @@ services:
     volumes:
       - ./redis/data/:/data
     networks:
-      - network
-
+      - support-network
 
 networks:
-  network:
+  support-network:
+    name: support-network
+    driver: bridge
