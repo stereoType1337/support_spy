@@ -10,10 +10,12 @@ from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from aiogram.filters import Command, MagicData
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.utils.markdown import hcode, hbold
+from aiogram.types import InlineKeyboardButton
+from aiogram.utils.markdown import hcode, hbold, hlink
 from aiogram.utils.text_decorations import html_decoration as hd
 
 from app.bot.manager import Manager
+from app.bot.utils.api import get_user_info, get_user_keys, format_user_info_message
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
@@ -595,9 +597,27 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
     if not user_data: return None  # noqa
 
-    text = manager.text_message.get("user_information")
-    # Reply with formatted user information
-    await message.reply(text.format_map(user_data.to_dict()))
+    user_info = await get_user_info(manager.config.api, user_data.id)
+
+    if user_info:
+        keys = await get_user_keys(manager.config.api, user_data.id)
+        text = format_user_info_message(user_info, keys)
+    else:
+        url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
+        text = manager.text_message.get("user_started_bot")
+        text = text.format(name=hlink(user_data.full_name, url), id=user_data.id)
+
+    presets = await get_presets()
+    bot_username = manager.config.api.BOT_USERNAME
+    bot_link = f"https://t.me/{bot_username}?start=search_{user_data.id}"
+
+    kb = InlineKeyboardBuilder()
+    kb.row(InlineKeyboardButton(text="Открыть в боте", url=bot_link))
+    for key in sorted(presets.keys()):
+        kb.button(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
+    kb.adjust(1, 2)
+
+    await message.reply(text, reply_markup=kb.as_markup(), parse_mode="HTML")
 
 
 @router.message(Command(commands=["ban"]))
