@@ -1,0 +1,790 @@
+{
+  "id": null,
+  "uid": null,
+  "title": "Support Bot Dashboard",
+  "tags": ["support-bot", "telegram"],
+  "timezone": "browser",
+  "schemaVersion": 40,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "weekStart": "",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "type": "row",
+      "title": "Overview",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "id": 100
+    },
+    {
+      "id": 1,
+      "title": "Total Users",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS \"Total Users\" FROM users;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Active Users (sent message)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS \"Active Users\" FROM users WHERE has_sent_message = true;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Banned Users",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS \"Banned\" FROM users WHERE is_banned = true;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Bot Stopped",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "orange", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS \"Stopped\" FROM users WHERE is_bot_stopped = true;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Total Topics",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "purple", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS \"Topics\" FROM topic_stats;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Total Responder Messages",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "super-light-blue", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS \"Messages\" FROM message_stats;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Users",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "collapsed": false,
+      "id": 101
+    },
+    {
+      "id": 10,
+      "title": "New Users per Day",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "fillOpacity": 50,
+            "gradientMode": "scheme",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": { "mode": "none", "group": "A" },
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  DATE_TRUNC('day', TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS')) AS time,\n  COUNT(*) AS \"New Users\"\nFROM users\nWHERE TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY 1\nORDER BY 1;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Cumulative Users",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "spanNulls": false,
+            "showPoints": "never",
+            "stacking": { "mode": "none", "group": "A" },
+            "axisPlacement": "auto",
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  d.time,\n  SUM(COALESCE(u.cnt, 0)) OVER (ORDER BY d.time) AS \"Total Users\"\nFROM (\n  SELECT generate_series(\n    DATE_TRUNC('day', $__timeFrom()::timestamp),\n    DATE_TRUNC('day', $__timeTo()::timestamp),\n    '1 day'::interval\n  ) AS time\n) d\nLEFT JOIN (\n  SELECT\n    DATE_TRUNC('day', TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS')) AS time,\n    COUNT(*) AS cnt\n  FROM users\n  GROUP BY 1\n) u ON d.time = u.time\nORDER BY 1;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Support Activity",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "collapsed": false,
+      "id": 102
+    },
+    {
+      "id": 20,
+      "title": "Responder Messages per Day",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "fillOpacity": 50,
+            "gradientMode": "scheme",
+            "spanNulls": false,
+            "showPoints": "never",
+            "stacking": { "mode": "normal", "group": "A" },
+            "axisPlacement": "auto",
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  DATE_TRUNC('day', TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS')) AS time,\n  responder_name AS metric,\n  COUNT(*) AS value\nFROM message_stats\nWHERE TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY 1, 2\nORDER BY 1;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Topics Activity per Day",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "fillOpacity": 50,
+            "gradientMode": "scheme",
+            "spanNulls": false,
+            "showPoints": "never",
+            "stacking": { "mode": "none", "group": "A" },
+            "axisPlacement": "auto",
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  DATE_TRUNC('day', TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS')) AS time,\n  COUNT(*) AS \"New Topics\"\nFROM topic_stats\nWHERE TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY 1\nORDER BY 1;",
+          "format": "table",
+          "refId": "A"
+        },
+        {
+          "rawSql": "SELECT\n  DATE_TRUNC('day', TO_TIMESTAMP(updated_at, 'YYYY-MM-DD HH24:MI:SS')) AS time,\n  COUNT(*) AS \"Active Topics\"\nFROM topic_stats\nWHERE TO_TIMESTAMP(updated_at, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY 1\nORDER BY 1;",
+          "format": "table",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Responder Stats",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "collapsed": false,
+      "id": 103
+    },
+    {
+      "id": 30,
+      "title": "Top Responders (selected period)",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "axisPlacement": "auto",
+            "axisCenteredZero": false
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "xTickLabelRotation": 0,
+        "xTickLabelMaxLength": 0,
+        "showValue": "always",
+        "stacking": "none",
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  responder_name AS \"Responder\",\n  COUNT(*) AS \"Messages\"\nFROM message_stats\nWHERE TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY responder_name\nORDER BY \"Messages\" DESC\nLIMIT 15;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "title": "Responder Unique Topics (selected period)",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "axisPlacement": "auto",
+            "axisCenteredZero": false
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "xTickLabelRotation": 0,
+        "xTickLabelMaxLength": 0,
+        "showValue": "always",
+        "stacking": "none",
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  responder_name AS \"Responder\",\n  COUNT(DISTINCT message_thread_id) AS \"Unique Topics\"\nFROM message_stats\nWHERE TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY responder_name\nORDER BY \"Unique Topics\" DESC\nLIMIT 15;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Hourly Patterns",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "collapsed": false,
+      "id": 104
+    },
+    {
+      "id": 40,
+      "title": "User Registrations by Hour of Day",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "gradientMode": "scheme",
+            "axisPlacement": "auto"
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "showValue": "auto",
+        "stacking": "none",
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  EXTRACT(HOUR FROM TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS'))::text || ':00' AS \"Hour\",\n  COUNT(*) AS \"Registrations\"\nFROM users\nWHERE TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY EXTRACT(HOUR FROM TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS'))\nORDER BY EXTRACT(HOUR FROM TO_TIMESTAMP(created_at, 'YYYY-MM-DD HH24:MI:SS'));",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "title": "Support Responses by Hour of Day",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "gradientMode": "scheme",
+            "axisPlacement": "auto"
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "showValue": "auto",
+        "stacking": "none",
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  EXTRACT(HOUR FROM TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS'))::text || ':00' AS \"Hour\",\n  COUNT(*) AS \"Responses\"\nFROM message_stats\nWHERE TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS') BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY EXTRACT(HOUR FROM TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS'))\nORDER BY EXTRACT(HOUR FROM TO_TIMESTAMP(timestamp, 'YYYY-MM-DD HH24:MI:SS'));",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Tables",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+      "collapsed": false,
+      "id": 105
+    },
+    {
+      "id": 50,
+      "title": "Recent Topics",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 42 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto", "inspect": false }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Link" },
+            "properties": [
+              { "id": "links", "value": [{ "title": "Open Topic", "url": "${__data.fields.Link}", "targetBlank": true }] }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "Updated", "desc": true }],
+        "cellHeight": "sm",
+        "footer": { "show": false }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  user_name AS \"User\",\n  username AS \"Username\",\n  total_messages AS \"Messages\",\n  created_at AS \"Created\",\n  updated_at AS \"Updated\",\n  topic_link AS \"Link\"\nFROM topic_stats\nORDER BY updated_at DESC\nLIMIT 50;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "title": "Recent User Registrations",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 42 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto", "inspect": false }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Banned" },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-text"
+              },
+              {
+                "id": "color",
+                "value": { "mode": "fixed", "fixedColor": "red" }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "Registered", "desc": true }],
+        "cellHeight": "sm",
+        "footer": { "show": false }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  id AS \"ID\",\n  full_name AS \"Name\",\n  username AS \"Username\",\n  state AS \"State\",\n  CASE WHEN is_banned THEN 'Yes' ELSE 'No' END AS \"Banned\",\n  CASE WHEN is_bot_stopped THEN 'Yes' ELSE 'No' END AS \"Stopped\",\n  created_at AS \"Registered\"\nFROM users\nORDER BY created_at DESC\nLIMIT 50;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "User Breakdown",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "collapsed": false,
+      "id": 106
+    },
+    {
+      "id": 60,
+      "title": "User States",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 53 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "tooltip": false, "viz": false, "legend": false } }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true },
+        "pieType": "donut",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT state AS \"State\", COUNT(*) AS \"Count\" FROM users GROUP BY state ORDER BY \"Count\" DESC;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "title": "Bot Status Breakdown",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 53 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "tooltip": false, "viz": false, "legend": false } }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true },
+        "pieType": "donut",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n  CASE\n    WHEN is_banned THEN 'Banned'\n    WHEN is_bot_stopped THEN 'Stopped bot'\n    WHEN has_sent_message THEN 'Active'\n    ELSE 'Inactive'\n  END AS \"Status\",\n  COUNT(*) AS \"Count\"\nFROM users\nGROUP BY 1\nORDER BY \"Count\" DESC;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "title": "Avg Messages per Topic",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 53 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT ROUND(AVG(total_messages)::numeric, 1) AS \"Avg Messages\" FROM topic_stats WHERE total_messages > 0;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": { "list": [] },
+  "annotations": { "list": [] }
+}

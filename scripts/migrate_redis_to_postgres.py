@@ -12,11 +12,19 @@ import json
 import os
 
 import asyncpg
+from dotenv import load_dotenv
 from redis.asyncio import Redis
 
+load_dotenv()
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-POSTGRES_DSN = os.getenv("POSTGRES_DSN", "postgresql://bot:bot_secret_password@localhost:5432/support_bot")
+PG_USER = os.getenv("POSTGRES_USER", "bot")
+PG_PASS = os.getenv("POSTGRES_PASSWORD", "")
+PG_HOST = os.getenv("POSTGRES_HOST", "postgres")
+PG_PORT = os.getenv("POSTGRES_PORT", "5432")
+PG_DB = os.getenv("POSTGRES_DB", "support_bot")
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://support-redis-ray:6379/0")
+POSTGRES_DSN = f"postgresql://{PG_USER}:{PG_PASS}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 
 
 async def main() -> None:
@@ -24,6 +32,50 @@ async def main() -> None:
     pool = await asyncpg.create_pool(POSTGRES_DSN)
 
     async with pool.acquire() as conn:
+        # Create tables
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id BIGINT PRIMARY KEY,
+                message_thread_id BIGINT,
+                message_silent_id BIGINT,
+                message_silent_mode BOOLEAN NOT NULL DEFAULT FALSE,
+                full_name VARCHAR(255) NOT NULL,
+                username VARCHAR(255),
+                state VARCHAR(50) NOT NULL DEFAULT 'member',
+                is_banned BOOLEAN NOT NULL DEFAULT FALSE,
+                language_code VARCHAR(10),
+                created_at VARCHAR(50) NOT NULL,
+                has_sent_message BOOLEAN NOT NULL DEFAULT FALSE,
+                has_bot_replied BOOLEAN NOT NULL DEFAULT FALSE,
+                is_bot_stopped BOOLEAN NOT NULL DEFAULT FALSE,
+                is_bot_restarted BOOLEAN NOT NULL DEFAULT FALSE
+            );
+            CREATE INDEX IF NOT EXISTS idx_users_message_thread_id
+                ON users(message_thread_id) WHERE message_thread_id IS NOT NULL;
+            CREATE TABLE IF NOT EXISTS topic_stats (
+                message_thread_id BIGINT PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                user_name VARCHAR(255) NOT NULL,
+                username VARCHAR(255),
+                topic_link VARCHAR(512) NOT NULL,
+                created_at VARCHAR(50) NOT NULL,
+                updated_at VARCHAR(50) NOT NULL,
+                total_messages INTEGER NOT NULL DEFAULT 0,
+                responder_counts JSONB NOT NULL DEFAULT '{}'
+            );
+            CREATE TABLE IF NOT EXISTS message_stats (
+                id SERIAL PRIMARY KEY,
+                message_thread_id BIGINT NOT NULL,
+                responder_id BIGINT NOT NULL,
+                responder_name VARCHAR(255) NOT NULL,
+                timestamp VARCHAR(50) NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_message_stats_timestamp
+                ON message_stats(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_message_stats_thread_id
+                ON message_stats(message_thread_id);
+        """)
+        print("Tables created")
         # --- Migrate users ---
         user_ids = await redis.hkeys("users")
         migrated_users = 0
