@@ -15,7 +15,7 @@ from aiogram.utils.markdown import hcode, hbold, hlink
 from aiogram.utils.text_decorations import html_decoration as hd
 
 from app.bot.manager import Manager
-from app.bot.utils.api import get_user_info, get_user_keys, format_user_info_message
+from app.bot.utils.api import get_user_info, get_user_keys, get_user_traffic, format_user_info_message
 from app.bot.utils.postgres import PostgresStorage
 from app.bot.utils.postgres.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
@@ -601,7 +601,8 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
 
     if user_info:
         keys = await get_user_keys(manager.config.api, user_data.id)
-        text = format_user_info_message(user_info, keys)
+        traffic_gb = await get_user_traffic(manager.config.remna, keys)
+        text = format_user_info_message(user_info, keys, traffic_gb)
     else:
         url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
         text = manager.text_message.get("user_started_bot")

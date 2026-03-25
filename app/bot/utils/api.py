@@ -2,7 +2,7 @@ from typing import Optional, List, Dict, Any
 import aiohttp
 from datetime import datetime
 
-from app.config import ApiConfig
+from app.config import ApiConfig, RemnaConfig
 
 
 async def get_user_info(api_config: ApiConfig, user_tg_id: int) -> Optional[Dict[str, Any]]:
@@ -55,7 +55,52 @@ async def get_user_keys(api_config: ApiConfig, user_tg_id: int) -> List[Dict[str
         return []
 
 
-def format_user_info_message(user_info: Dict[str, Any], keys: List[Dict[str, Any]]) -> str:
+async def get_user_traffic(remna_config: RemnaConfig, keys: List[Dict[str, Any]]) -> Optional[float]:
+    """
+    Получает суммарный трафик пользователя из Remna API по его ключам.
+
+    :param remna_config: Конфигурация Remna.
+    :param keys: Список ключей пользователя.
+    :return: Трафик в ГБ или None.
+    """
+    if not remna_config.URL or not remna_config.TOKEN:
+        return None
+
+    total_bytes = 0
+    found = False
+
+    headers = {
+        "Authorization": f"Bearer {remna_config.TOKEN}",
+        "accept": "application/json",
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            for key in keys:
+                client_id = key.get("client_id")
+                if not client_id:
+                    continue
+                url = f"{remna_config.URL}/api/users/{client_id}"
+                try:
+                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            response_data = data.get("response", data)
+                            used = response_data.get("usedTrafficBytes", 0)
+                            total_bytes += used
+                            found = True
+                except Exception:
+                    continue
+    except Exception:
+        return None
+
+    if not found:
+        return None
+
+    return round(total_bytes / 1073741824, 2)
+
+
+def format_user_info_message(user_info: Dict[str, Any], keys: List[Dict[str, Any]], traffic_gb: Optional[float] = None) -> str:
     """
     Форматирует сообщение с информацией о пользователе и его ключах.
 
@@ -101,6 +146,9 @@ def format_user_info_message(user_info: Dict[str, Any], keys: List[Dict[str, Any
         f"🎯 <b>Триал:</b> {trial}",
         f"📅 <b>Дата регистрации:</b> {reg_date}",
     ]
+
+    if traffic_gb is not None:
+        message_parts.append(f"📊 <b>Трафик за месяц:</b> {traffic_gb} ГБ")
 
     # Форматирование ключей
     if keys:

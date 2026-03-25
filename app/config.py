@@ -33,6 +33,12 @@ class PostgresConfig:
 
 
 @dataclass
+class RemnaConfig:
+    URL: str
+    TOKEN: str
+
+
+@dataclass
 class ApiConfig:
     URL: str
     TOKEN: str
@@ -45,6 +51,7 @@ class Config:
     bot: BotConfig
     postgres: PostgresConfig
     api: ApiConfig
+    remna: RemnaConfig
 
 
 def load_config() -> Config:
@@ -73,5 +80,9 @@ def load_config() -> Config:
             TOKEN=env.str("API_TOKEN"),
             ADMIN_TG_ID=env.int("API_ADMIN_TG_ID"),
             BOT_USERNAME=env.str("BOT_USERNAME", default="vpn_plus777_bot"),
+        ),
+        remna=RemnaConfig(
+            URL=env.str("REMNA_URL", default=""),
+            TOKEN=env.str("REMNA_TOKEN", default=""),
         ),
     )
