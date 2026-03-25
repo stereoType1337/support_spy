@@ -48,20 +48,14 @@ def parse_date_range(date_range_str: str) -> Tuple[datetime, datetime] | None:
 
 
 def _parse_date(date_str: str) -> datetime | None:
-    """Парсит строку даты в datetime."""
-    formats = [
-        "%Y-%m-%d %H:%M:%S %Z",
-        "%Y-%m-%d %H:%M:%S UTC%z",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d",
-    ]
-    for fmt in formats:
-        try:
-            return datetime.strptime(date_str, fmt)
-        except ValueError:
-            continue
+    """Парсит строку даты в naive datetime (без таймзоны)."""
+    # Берём первые 19 символов — "YYYY-MM-DD HH:MM:SS", отбрасываем таймзону
     try:
         return datetime.strptime(date_str[:19], "%Y-%m-%d %H:%M:%S")
+    except (ValueError, IndexError):
+        pass
+    try:
+        return datetime.strptime(date_str[:10], "%Y-%m-%d")
     except (ValueError, IndexError):
         return None
 
