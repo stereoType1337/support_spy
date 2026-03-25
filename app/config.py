@@ -14,7 +14,7 @@ def parse_admin_ids(raw: str) -> set[int]:
 class BotConfig:
 
     TOKEN: str
-    DEV_ID: int
+    DEV_IDS: set[int]
     GROUP_ID: int
     BOT_EMOJI_ID: str
     ADMIN_IDS: set[int]  # <-- NEW
@@ -63,7 +63,7 @@ def load_config() -> Config:
     return Config(
         bot=BotConfig(
             TOKEN=env.str("BOT_TOKEN"),
-            DEV_ID=env.int("BOT_DEV_ID"),
+            DEV_IDS=parse_admin_ids(env.str("BOT_DEV_ID")),
             GROUP_ID=env.int("BOT_GROUP_ID"),
             BOT_EMOJI_ID=env.str("BOT_EMOJI_ID"),
             ADMIN_IDS=parse_admin_ids(admin_ids_raw),

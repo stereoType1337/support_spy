@@ -67,7 +67,7 @@ async def handler(message: Message, manager: Manager, user_data: UserData) -> No
 
 @router.message(
     Command("newsletter"),
-    MagicData(F.event_from_user.id == F.config.bot.DEV_ID),  # type: ignore
+    MagicData(F.event_from_user.id.in_(F.config.bot.DEV_IDS)),  # type: ignore
 )
 async def handler(
         message: Message,
@@ -120,7 +120,7 @@ _pending_deletions: dict = {}
 
 @router.message(
     Command("delete_topics"),
-    MagicData(F.event_from_user.id == F.config.bot.DEV_ID),  # type: ignore
+    MagicData(F.event_from_user.id.in_(F.config.bot.DEV_IDS)),  # type: ignore
 )
 async def handle_delete_topics(
     message: Message,

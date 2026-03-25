@@ -30,7 +30,7 @@ def _is_admin(message: Message, manager: Manager) -> bool:
     if not message.from_user:
         return False
     return (
-        message.from_user.id == manager.config.bot.DEV_ID
+        message.from_user.id in manager.config.bot.DEV_IDS
         or message.from_user.id in manager.config.bot.ADMIN_IDS
     )
 

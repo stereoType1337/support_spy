@@ -26,7 +26,7 @@ async def get_or_create_forum_topic(
             await redis.update_user(user_data.id, user_data)
 
         except Exception as e:
-            await bot.send_message(config.bot.DEV_ID, str(e))
+            await bot.send_message(next(iter(config.bot.DEV_IDS)), str(e))
             logging.exception(e)
     else:
         # Check if the topic still exists by trying to edit it (we'll restore the name if it exists)
@@ -52,7 +52,7 @@ async def get_or_create_forum_topic(
                     user_data.message_thread_id = message_thread_id
                     await redis.update_user(user_data.id, user_data)
                 except Exception as e:
-                    await bot.send_message(config.bot.DEV_ID, str(e))
+                    await bot.send_message(next(iter(config.bot.DEV_IDS)), str(e))
                     logging.exception(e)
             elif "topic_not_modified" in error_message:
                 # Topic exists but name is already the same - this is fine, topic exists

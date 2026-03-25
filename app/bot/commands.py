@@ -88,19 +88,19 @@ async def setup(bot: Bot, config: Config) -> None:
         "ru": commands["ru"].copy(),
     }
 
-    try:
-        # Set commands for dev
-        await bot.set_my_commands(
-            commands=dev_commands["en"],
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
-        )
-        await bot.set_my_commands(
-            commands=dev_commands["ru"],
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
-            language_code="ru",
-        )
-    except TelegramBadRequest:
-        raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.")
+    for dev_id in config.bot.DEV_IDS:
+        try:
+            await bot.set_my_commands(
+                commands=dev_commands["en"],
+                scope=BotCommandScopeChat(chat_id=dev_id),
+            )
+            await bot.set_my_commands(
+                commands=dev_commands["ru"],
+                scope=BotCommandScopeChat(chat_id=dev_id),
+                language_code="ru",
+            )
+        except TelegramBadRequest:
+            pass
 
     # Set commands for all admins from ADMIN_IDS
     for admin_id in config.bot.ADMIN_IDS:
@@ -149,18 +149,17 @@ async def delete(bot: Bot, config: Config) -> None:
     :param bot: The Bot object.
     """
 
-    try:
-        # Delete commands for dev or admin in any language
-        await bot.delete_my_commands(
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
-        )
-        # Delete commands for dev or admin in Russian language
-        await bot.delete_my_commands(
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
-            language_code="ru",
-        )
-    except TelegramBadRequest:
-        raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.")
+    for dev_id in config.bot.DEV_IDS:
+        try:
+            await bot.delete_my_commands(
+                scope=BotCommandScopeChat(chat_id=dev_id),
+            )
+            await bot.delete_my_commands(
+                scope=BotCommandScopeChat(chat_id=dev_id),
+                language_code="ru",
+            )
+        except TelegramBadRequest:
+            pass
 
     # Delete commands for all private chats in any language
     await bot.delete_my_commands(
