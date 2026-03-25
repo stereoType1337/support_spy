@@ -7,204 +7,175 @@
   "schemaVersion": 40,
   "version": 1,
   "refresh": "5m",
-  "time": { "from": "now-1y", "to": "now" },
+  "time": { "from": "now-30d", "to": "now" },
   "editable": true,
   "graphTooltip": 1,
   "panels": [
-    { "type": "row", "title": "Overview", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false, "id": 100 },
+    {
+      "type": "row", "title": "Overview", "id": 100,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false
+    },
     {
       "id": 1, "title": "Total Users", "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 1 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto" },
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "#3274D9", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto", "orientation": "auto" },
       "targets": [{ "rawSql": "SELECT COUNT(*) AS total FROM users;", "format": "table", "refId": "A" }]
     },
     {
       "id": 2, "title": "Active Users", "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 1 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto" },
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto", "orientation": "auto" },
       "targets": [{ "rawSql": "SELECT COUNT(*) AS total FROM users WHERE has_sent_message = true;", "format": "table", "refId": "A" }]
     },
     {
       "id": 3, "title": "Banned", "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 1 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto" },
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "#F2495C", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto", "orientation": "auto" },
       "targets": [{ "rawSql": "SELECT COUNT(*) AS total FROM users WHERE is_banned = true;", "format": "table", "refId": "A" }]
     },
     {
-      "id": 4, "title": "Total Topics", "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4, "title": "Open Topics", "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 1 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto" },
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "#B877D9", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto", "orientation": "auto" },
       "targets": [{ "rawSql": "SELECT COUNT(*) AS total FROM topic_stats;", "format": "table", "refId": "A" }]
     },
     {
-      "id": 5, "title": "Responder Messages", "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5, "title": "Support Responses", "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 1 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "super-light-blue", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto" },
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "#56A3F1", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto", "orientation": "auto" },
       "targets": [{ "rawSql": "SELECT COUNT(*) AS total FROM message_stats;", "format": "table", "refId": "A" }]
     },
     {
-      "id": 6, "title": "Bot Stopped", "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6, "title": "Avg Msgs / Topic", "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 1 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] }, "color": { "mode": "thresholds" } }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto" },
-      "targets": [{ "rawSql": "SELECT COUNT(*) AS total FROM users WHERE is_bot_stopped = true;", "format": "table", "refId": "A" }]
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "#FF9830", "value": null }] }, "color": { "mode": "thresholds" }, "decimals": 1 }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto", "orientation": "auto" },
+      "targets": [{ "rawSql": "SELECT ROUND(AVG(total_messages)::numeric, 1) AS avg FROM topic_stats WHERE total_messages > 0;", "format": "table", "refId": "A" }]
     },
 
-    { "type": "row", "title": "Users", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "collapsed": false, "id": 101 },
     {
-      "id": 10, "title": "New Users per Day", "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
-      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 50, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "vertical", "barWidth": 0.8, "showValue": "auto", "stacking": "none", "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{
-        "rawSql": "SELECT\n  TO_CHAR(LEFT(created_at, 19)::timestamp, 'YYYY-MM-DD') AS day,\n  COUNT(*) AS new_users\nFROM users\nGROUP BY 1\nORDER BY 1;",
-        "format": "table", "refId": "A"
-      }]
+      "type": "row", "title": "Support Team Performance", "id": 102,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 }, "collapsed": false
     },
     {
-      "id": 11, "title": "Cumulative Users", "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 23, "title": "Responder Stats", "type": "table",
+      "description": "Full stats per support agent",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 7 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 20, "gradientMode": "scheme", "showPoints": "never", "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "scaleDistribution": { "type": "linear" }, "thresholdsStyle": { "mode": "off" } }, "color": { "mode": "palette-classic" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
-      "options": { "tooltip": { "mode": "single", "sort": "none" }, "legend": { "displayMode": "list", "placement": "bottom" } },
-      "targets": [{
-        "rawSql": "WITH daily AS (\n  SELECT\n    DATE_TRUNC('day', LEFT(created_at, 19)::timestamp) AS time,\n    COUNT(*) AS cnt\n  FROM users\n  GROUP BY 1\n)\nSELECT\n  time,\n  SUM(cnt) OVER (ORDER BY time) AS cumulative_users\nFROM daily\nORDER BY 1;",
-        "format": "time_series", "refId": "A"
-      }]
-    },
-
-    { "type": "row", "title": "Support Team Performance", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }, "collapsed": false, "id": 102 },
-    {
-      "id": 20, "title": "Responses per Responder per Day", "type": "barchart",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 15 },
-      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 50, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "vertical", "barWidth": 0.8, "showValue": "auto", "stacking": "normal", "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum", "mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{
-        "rawSql": "SELECT\n  TO_CHAR(ms.\"timestamp\"::timestamp, 'YYYY-MM-DD') AS day,\n  ms.responder_name,\n  COUNT(*) AS responses\nFROM message_stats ms\nGROUP BY 1, 2\nORDER BY 1;",
-        "format": "table", "refId": "A"
-      }]
-    },
-    {
-      "id": 21, "title": "Total Messages per Responder", "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
-      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 80, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "horizontal", "barWidth": 0.8, "showValue": "always", "stacking": "none", "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{
-        "rawSql": "SELECT\n  ms.responder_name,\n  COUNT(*) AS messages\nFROM message_stats ms\nGROUP BY 1\nORDER BY messages DESC;",
-        "format": "table", "refId": "A"
-      }]
-    },
-    {
-      "id": 22, "title": "Unique Topics per Responder", "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
-      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 80, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "horizontal", "barWidth": 0.8, "showValue": "always", "stacking": "none", "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{
-        "rawSql": "SELECT\n  ms.responder_name,\n  COUNT(DISTINCT ms.message_thread_id) AS unique_topics\nFROM message_stats ms\nGROUP BY 1\nORDER BY unique_topics DESC;",
-        "format": "table", "refId": "A"
-      }]
-    },
-    {
-      "id": 23, "title": "Responder Detailed Stats", "type": "table",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 31 },
-      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "align": "auto", "displayMode": "auto", "inspect": false } }, "overrides": [{ "matcher": { "id": "byName", "options": "avg_per_day" }, "properties": [{ "id": "decimals", "value": 1 }] }] },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "displayMode": "auto", "inspect": false } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "messages" }, "properties": [{ "id": "custom.displayMode", "value": "gradient-gauge" }, { "id": "color", "value": { "mode": "continuous-blues" } }, { "id": "max", "value": 500 }] },
+          { "matcher": { "id": "byName", "options": "avg_per_day" }, "properties": [{ "id": "decimals", "value": 1 }] },
+          { "matcher": { "id": "byName", "options": "msgs_per_topic" }, "properties": [{ "id": "decimals", "value": 1 }] }
+        ]
+      },
       "options": { "showHeader": true, "sortBy": [{ "displayName": "messages", "desc": true }], "cellHeight": "sm", "footer": { "show": true, "reducer": ["sum"], "countRows": false, "fields": ["messages", "unique_topics"] } },
       "targets": [{
         "rawSql": "SELECT\n  ms.responder_name,\n  COUNT(*) AS messages,\n  COUNT(DISTINCT ms.message_thread_id) AS unique_topics,\n  COUNT(DISTINCT DATE_TRUNC('day', ms.\"timestamp\"::timestamp)) AS active_days,\n  ROUND(COUNT(*)::numeric / GREATEST(COUNT(DISTINCT DATE_TRUNC('day', ms.\"timestamp\"::timestamp)), 1), 1) AS avg_per_day,\n  ROUND(COUNT(*)::numeric / GREATEST(COUNT(DISTINCT ms.message_thread_id), 1), 1) AS msgs_per_topic\nFROM message_stats ms\nGROUP BY 1\nORDER BY messages DESC;",
         "format": "table", "refId": "A"
       }]
     },
-
-    { "type": "row", "title": "Topic Activity", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 }, "collapsed": false, "id": 103 },
     {
-      "id": 30, "title": "New Topics per Day", "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 20, "title": "Responses per Day (by Responder)", "type": "timeseries",
+      "description": "Stacked bars - each color is a different responder",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 17 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 50, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "vertical", "barWidth": 0.8, "showValue": "auto", "stacking": "none", "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "barAlignment": 0, "lineWidth": 0, "fillOpacity": 80, "gradientMode": "none", "showPoints": "never", "stacking": { "mode": "normal", "group": "A" }, "axisPlacement": "auto", "scaleDistribution": { "type": "linear" }, "thresholdsStyle": { "mode": "off" } }, "color": { "mode": "palette-classic" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" }, "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] } },
       "targets": [{
-        "rawSql": "SELECT\n  TO_CHAR(t.created_at::timestamp, 'YYYY-MM-DD') AS day,\n  COUNT(*) AS new_topics\nFROM topic_stats t\nGROUP BY 1\nORDER BY 1;",
-        "format": "table", "refId": "A"
+        "rawSql": "SELECT\n  DATE_TRUNC('day', ms.\"timestamp\"::timestamp) AS time,\n  ms.responder_name AS metric,\n  COUNT(*) AS value\nFROM message_stats ms\nGROUP BY 1, 2\nORDER BY 1;",
+        "format": "time_series", "refId": "A"
       }]
     },
     {
-      "id": 31, "title": "Messages in Topics per Day", "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 24, "title": "Responses per Hour (by Responder)", "type": "timeseries",
+      "description": "Hourly distribution of responses",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 26 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 50, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "vertical", "barWidth": 0.8, "showValue": "auto", "stacking": "none", "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "barAlignment": 0, "lineWidth": 0, "fillOpacity": 80, "gradientMode": "none", "showPoints": "never", "stacking": { "mode": "normal", "group": "A" }, "axisPlacement": "auto", "scaleDistribution": { "type": "linear" }, "thresholdsStyle": { "mode": "off" } }, "color": { "mode": "palette-classic" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" }, "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] } },
       "targets": [{
-        "rawSql": "SELECT\n  TO_CHAR(ms.\"timestamp\"::timestamp, 'YYYY-MM-DD') AS day,\n  COUNT(*) AS messages\nFROM message_stats ms\nGROUP BY 1\nORDER BY 1;",
-        "format": "table", "refId": "A"
-      }]
-    },
-    {
-      "id": 32, "title": "Hottest Topics", "type": "table",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 48 },
-      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "align": "auto", "displayMode": "auto", "inspect": false } }, "overrides": [{ "matcher": { "id": "byName", "options": "topic_link" }, "properties": [{ "id": "links", "value": [{ "title": "Open", "url": "${__data.fields.topic_link}", "targetBlank": true }] }] }, { "matcher": { "id": "byName", "options": "total_messages" }, "properties": [{ "id": "custom.displayMode", "value": "gradient-gauge" }, { "id": "color", "value": { "mode": "continuous-blues" } }, { "id": "max", "value": 50 }] }] },
-      "options": { "showHeader": true, "sortBy": [{ "displayName": "total_messages", "desc": true }], "cellHeight": "sm", "footer": { "show": false } },
-      "targets": [{
-        "rawSql": "SELECT\n  t.user_name,\n  t.username,\n  t.total_messages,\n  t.created_at,\n  t.updated_at,\n  t.topic_link\nFROM topic_stats t\nORDER BY t.total_messages DESC\nLIMIT 30;",
-        "format": "table", "refId": "A"
+        "rawSql": "SELECT\n  DATE_TRUNC('hour', ms.\"timestamp\"::timestamp) AS time,\n  ms.responder_name AS metric,\n  COUNT(*) AS value\nFROM message_stats ms\nGROUP BY 1, 2\nORDER BY 1;",
+        "format": "time_series", "refId": "A"
       }]
     },
 
-    { "type": "row", "title": "Hourly Patterns", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 }, "collapsed": false, "id": 104 },
     {
-      "id": 40, "title": "User Registrations by Hour", "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 57 },
+      "type": "row", "title": "Topics & Users", "id": 103,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 }, "collapsed": false
+    },
+    {
+      "id": 32, "title": "Top Topics by Messages", "type": "table",
+      "description": "Topics with most user messages",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 36 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 60, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "vertical", "barWidth": 0.8, "showValue": "auto", "stacking": "none", "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "displayMode": "auto", "inspect": false } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "topic_link" }, "properties": [{ "id": "links", "value": [{ "title": "Open topic", "url": "${__data.fields.topic_link}", "targetBlank": true }] }] },
+          { "matcher": { "id": "byName", "options": "total_messages" }, "properties": [{ "id": "custom.displayMode", "value": "gradient-gauge" }, { "id": "color", "value": { "mode": "continuous-blues" } }, { "id": "max", "value": 50 }] },
+          { "matcher": { "id": "byName", "options": "support_replies" }, "properties": [{ "id": "custom.displayMode", "value": "gradient-gauge" }, { "id": "color", "value": { "mode": "continuous-greens" } }, { "id": "max", "value": 30 }] }
+        ]
+      },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "total_messages", "desc": true }], "cellHeight": "sm", "footer": { "show": true, "reducer": ["sum"], "countRows": false, "fields": ["total_messages", "support_replies"] } },
       "targets": [{
-        "rawSql": "SELECT\n  LPAD(EXTRACT(HOUR FROM LEFT(created_at, 19)::timestamp)::int::text, 2, '0') || ':00' AS hour,\n  COUNT(*) AS registrations\nFROM users\nGROUP BY 1\nORDER BY 1;",
+        "rawSql": "SELECT\n  t.user_name,\n  t.username,\n  t.total_messages,\n  (SELECT COUNT(*) FROM message_stats ms WHERE ms.message_thread_id = t.message_thread_id) AS support_replies,\n  t.created_at,\n  t.updated_at,\n  t.topic_link\nFROM topic_stats t\nORDER BY t.total_messages DESC\nLIMIT 30;",
         "format": "table", "refId": "A"
       }]
     },
     {
-      "id": 41, "title": "Support Responses by Hour", "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 57 },
+      "id": 30, "title": "New Topics per Day", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 60, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "orientation": "vertical", "barWidth": 0.8, "showValue": "auto", "stacking": "none", "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "barAlignment": 0, "lineWidth": 0, "fillOpacity": 70, "gradientMode": "scheme", "showPoints": "never", "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "scaleDistribution": { "type": "linear" }, "thresholdsStyle": { "mode": "off" } }, "color": { "mode": "fixed", "fixedColor": "#B877D9" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "single", "sort": "none" }, "legend": { "displayMode": "list", "placement": "bottom" } },
       "targets": [{
-        "rawSql": "SELECT\n  LPAD(EXTRACT(HOUR FROM ms.\"timestamp\"::timestamp)::int::text, 2, '0') || ':00' AS hour,\n  COUNT(*) AS responses\nFROM message_stats ms\nGROUP BY 1\nORDER BY 1;",
-        "format": "table", "refId": "A"
+        "rawSql": "SELECT\n  DATE_TRUNC('day', t.created_at::timestamp) AS time,\n  COUNT(*) AS new_topics\nFROM topic_stats t\nGROUP BY 1\nORDER BY 1;",
+        "format": "time_series", "refId": "A"
+      }]
+    },
+    {
+      "id": 31, "title": "New Users per Day", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
+      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "barAlignment": 0, "lineWidth": 0, "fillOpacity": 70, "gradientMode": "scheme", "showPoints": "never", "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "scaleDistribution": { "type": "linear" }, "thresholdsStyle": { "mode": "off" } }, "color": { "mode": "fixed", "fixedColor": "#3274D9" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "tooltip": { "mode": "single", "sort": "none" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{
+        "rawSql": "SELECT\n  DATE_TRUNC('day', LEFT(created_at, 19)::timestamp) AS time,\n  COUNT(*) AS new_users\nFROM users\nGROUP BY 1\nORDER BY 1;",
+        "format": "time_series", "refId": "A"
       }]
     },
 
-    { "type": "row", "title": "User Breakdown", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 65 }, "collapsed": false, "id": 105 },
     {
-      "id": 50, "title": "User Status Breakdown", "type": "piechart",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 66 },
+      "type": "row", "title": "User Breakdown", "id": 105,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 }, "collapsed": false
+    },
+    {
+      "id": 50, "title": "User Status", "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 55 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "hideFrom": { "tooltip": false, "viz": false, "legend": false } } }, "overrides": [] },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true }, "pieType": "donut", "tooltip": { "mode": "single", "sort": "none" }, "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
       "targets": [{
-        "rawSql": "SELECT\n  CASE\n    WHEN is_banned THEN 'Banned'\n    WHEN is_bot_stopped THEN 'Stopped bot'\n    WHEN has_sent_message THEN 'Active'\n    ELSE 'Inactive'\n  END AS status,\n  COUNT(*) AS cnt\nFROM users\nGROUP BY 1\nORDER BY cnt DESC;",
+        "rawSql": "SELECT\n  CASE\n    WHEN is_banned THEN 'Banned'\n    WHEN is_bot_stopped THEN 'Stopped'\n    WHEN has_sent_message THEN 'Active'\n    ELSE 'Inactive'\n  END AS status,\n  COUNT(*) AS cnt\nFROM users\nGROUP BY 1\nORDER BY cnt DESC;",
         "format": "table", "refId": "A"
       }]
     },
     {
       "id": 51, "title": "User States", "type": "piechart",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 66 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 55 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "hideFrom": { "tooltip": false, "viz": false, "legend": false } } }, "overrides": [] },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true }, "pieType": "donut", "tooltip": { "mode": "single", "sort": "none" }, "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
@@ -214,23 +185,13 @@
       }]
     },
     {
-      "id": 52, "title": "Avg Messages per Topic", "type": "stat",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 66 },
+      "id": 40, "title": "Registrations by Hour", "type": "barchart",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 55 },
       "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "color": { "mode": "thresholds" }, "decimals": 1 }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto", "justifyMode": "auto" },
-      "targets": [{ "rawSql": "SELECT ROUND(AVG(total_messages)::numeric, 1) AS avg_messages FROM topic_stats WHERE total_messages > 0;", "format": "table", "refId": "A" }]
-    },
-
-    { "type": "row", "title": "Recent Registrations", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 74 }, "collapsed": false, "id": 106 },
-    {
-      "id": 60, "title": "Recent Registrations", "type": "table",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 75 },
-      "datasource": { "uid": "raytun-support", "type": "grafana-postgresql-datasource" },
-      "fieldConfig": { "defaults": { "custom": { "align": "auto", "displayMode": "auto", "inspect": false } }, "overrides": [] },
-      "options": { "showHeader": true, "sortBy": [{ "displayName": "created_at", "desc": true }], "cellHeight": "sm", "footer": { "show": false } },
+      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 70, "gradientMode": "scheme", "axisPlacement": "auto" }, "color": { "mode": "fixed", "fixedColor": "#3274D9" } }, "overrides": [] },
+      "options": { "orientation": "vertical", "barWidth": 0.7, "showValue": "auto", "stacking": "none", "legend": { "displayMode": "hidden" }, "tooltip": { "mode": "single", "sort": "none" } },
       "targets": [{
-        "rawSql": "SELECT\n  id,\n  full_name,\n  username,\n  state,\n  is_banned,\n  is_bot_stopped,\n  has_sent_message,\n  created_at\nFROM users\nORDER BY created_at DESC\nLIMIT 50;",
+        "rawSql": "SELECT\n  LPAD(EXTRACT(HOUR FROM LEFT(created_at, 19)::timestamp)::int::text, 2, '0') || ':00' AS hour,\n  COUNT(*) AS users\nFROM users\nGROUP BY 1\nORDER BY 1;",
         "format": "table", "refId": "A"
       }]
     }
