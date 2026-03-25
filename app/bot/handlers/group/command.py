@@ -16,8 +16,8 @@ from aiogram.utils.text_decorations import html_decoration as hd
 
 from app.bot.manager import Manager
 from app.bot.utils.api import get_user_info, get_user_keys, format_user_info_message
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.stats import StatsStorage
+from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
 
 router_id = Router()
@@ -174,7 +174,7 @@ async def help_command(message: Message, manager: Manager) -> None:
 
 
 @router.message(Command("ans"))
-async def ans_command(message: Message, redis: RedisStorage) -> None:
+async def ans_command(message: Message, redis: PostgresStorage) -> None:
     """
     /ans — creates a message with inline buttons (preset answers) in current support topic.
     """
@@ -195,7 +195,7 @@ async def ans_command(message: Message, redis: RedisStorage) -> None:
     F.data.startswith(ANS_CB_PREFIX),
     MagicData(F.event_chat.id == F.config.bot.GROUP_ID),  # type: ignore
 )
-async def ans_callback(callback: CallbackQuery, manager: Manager, redis: RedisStorage, stats_storage: StatsStorage) -> None:
+async def ans_callback(callback: CallbackQuery, manager: Manager, redis: PostgresStorage, stats_storage: StatsStorage) -> None:
     """
     On preset button click: sends preset text to user напрямую, и подтверждает в топике.
     """
@@ -542,14 +542,14 @@ async def edit_presets(message: Message, manager: Manager) -> None:
 
 
 @router.message(Command("silent"))
-async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
+async def handler(message: Message, manager: Manager, redis: PostgresStorage) -> None:
     """
     Toggles silent mode for a user in the group.
     If silent mode is disabled, it will be enabled, and vice versa.
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :return: None
     """
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
@@ -585,13 +585,13 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
 
 
 @router.message(Command("information"))
-async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
+async def handler(message: Message, manager: Manager, redis: PostgresStorage) -> None:
     """
     Sends user information in response to the /information command.
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :return: None
     """
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
@@ -621,14 +621,14 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
 
 
 @router.message(Command(commands=["ban"]))
-async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
+async def handler(message: Message, manager: Manager, redis: PostgresStorage) -> None:
     """
     Toggles the ban status for a user in the group.
     If the user is banned, they will be unbanned, and vice versa.
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :return: None
     """
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)

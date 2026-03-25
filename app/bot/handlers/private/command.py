@@ -6,8 +6,8 @@ from aiogram_newsletter.manager import ANManager
 from app.bot.handlers.private.windows import Window
 from app.bot.manager import Manager
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.models import UserData
+from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.models import UserData
 from app.bot.utils.delete_topics import parse_date_range, delete_topics_by_date_range
 
 router = Router()
@@ -18,7 +18,7 @@ router.message.filter(F.chat.type == "private")
 async def handler(
         message: Message,
         manager: Manager,
-        redis: RedisStorage,
+        redis: PostgresStorage,
         user_data: UserData,
 ) -> None:
     """
@@ -29,7 +29,7 @@ async def handler(
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :param user_data: UserData object.
     :return: None
     """
@@ -71,14 +71,14 @@ async def handler(
         message: Message,
         manager: Manager,
         an_manager: ANManager,
-        redis: RedisStorage,
+        redis: PostgresStorage,
 ) -> None:
     """
     Handles the /newsletter command.
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :param an_manager: Manager object from aiogram_newsletter.
     :return: None
     """
@@ -88,13 +88,13 @@ async def handler(
 
 
 @router.message(Command("reply"))
-async def handle_bot_reply(message: Message, manager: Manager, redis: RedisStorage, user_data: UserData) -> None:
+async def handle_bot_reply(message: Message, manager: Manager, redis: PostgresStorage, user_data: UserData) -> None:
     """
     Handles bot replies to user messages.
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :param user_data: UserData object.
     :return: None
     """
@@ -116,7 +116,7 @@ async def handle_bot_reply(message: Message, manager: Manager, redis: RedisStora
 async def handle_delete_topics(
     message: Message,
     manager: Manager,
-    redis: RedisStorage,
+    redis: PostgresStorage,
 ) -> None:
     """
     Handles the /delete_topics command for mass deletion of forum topics.
@@ -126,7 +126,7 @@ async def handle_delete_topics(
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :return: None
     """
     # Получаем аргументы команды

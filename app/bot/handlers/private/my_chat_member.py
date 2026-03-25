@@ -4,8 +4,8 @@ from aiogram.types import ChatMemberUpdated
 from aiogram.utils.markdown import hlink
 
 from app.bot.manager import Manager
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.models import UserData
+from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.models import UserData
 
 router = Router()
 router.my_chat_member.filter(F.chat.type == "private")
@@ -14,7 +14,7 @@ router.my_chat_member.filter(F.chat.type == "private")
 @router.my_chat_member()
 async def handle_chat_member_update(
         update: ChatMemberUpdated,
-        redis: RedisStorage,
+        redis: PostgresStorage,
         user_data: UserData,
         manager: Manager,
 ) -> None:
@@ -22,7 +22,7 @@ async def handle_chat_member_update(
     Handle updates of the bot chat member status.
 
     :param update: ChatMemberUpdated object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :param user_data: UserData object.
     :param manager: Manager object.
     :return: None

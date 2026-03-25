@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.manager import Manager
-from app.bot.utils.redis.stats import StatsStorage
+from app.bot.utils.postgres.stats import StatsStorage
 
 router = Router()
 router.message.filter(F.chat.type == "private")

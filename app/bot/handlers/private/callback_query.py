@@ -4,8 +4,8 @@ from aiogram.types import CallbackQuery
 
 from app.bot.handlers.private.windows import Window
 from app.bot.manager import Manager
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.models import UserData
+from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.models import UserData
 from app.bot.utils.texts import SUPPORTED_LANGUAGES
 
 router = Router()
@@ -13,7 +13,7 @@ router.callback_query.filter(F.message.chat.type == "private", StateFilter(None)
 
 
 @router.callback_query()
-async def handler(call: CallbackQuery, manager: Manager, redis: RedisStorage, user_data: UserData) -> None:
+async def handler(call: CallbackQuery, manager: Manager, redis: PostgresStorage, user_data: UserData) -> None:
     """
     Handles callback queries for selecting the language.
 
@@ -22,7 +22,7 @@ async def handler(call: CallbackQuery, manager: Manager, redis: RedisStorage, us
 
     :param call: CallbackQuery object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :param user_data: UserData object.
     :return: None
     """

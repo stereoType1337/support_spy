@@ -21,13 +21,15 @@ class BotConfig:
 
 
 @dataclass
-class RedisConfig:
+class PostgresConfig:
     HOST: str
     PORT: int
-    DB: int
+    DB: str
+    USER: str
+    PASSWORD: str
 
     def dsn(self) -> str:
-        return f"redis://{self.HOST}:{self.PORT}/{self.DB}"
+        return f"postgresql://{self.USER}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DB}"
 
 
 @dataclass
@@ -41,7 +43,7 @@ class ApiConfig:
 @dataclass
 class Config:
     bot: BotConfig
-    redis: RedisConfig
+    postgres: PostgresConfig
     api: ApiConfig
 
 
@@ -59,10 +61,12 @@ def load_config() -> Config:
             BOT_EMOJI_ID=env.str("BOT_EMOJI_ID"),
             ADMIN_IDS=parse_admin_ids(admin_ids_raw),
         ),
-        redis=RedisConfig(
-            HOST=env.str("REDIS_HOST"),
-            PORT=env.int("REDIS_PORT"),
-            DB=env.int("REDIS_DB"),
+        postgres=PostgresConfig(
+            HOST=env.str("POSTGRES_HOST"),
+            PORT=env.int("POSTGRES_PORT", 5432),
+            DB=env.str("POSTGRES_DB"),
+            USER=env.str("POSTGRES_USER"),
+            PASSWORD=env.str("POSTGRES_PASSWORD"),
         ),
         api=ApiConfig(
             URL=env.str("API_URL", default="https://bot.raytun.ru/api"),

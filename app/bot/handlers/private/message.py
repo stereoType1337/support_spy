@@ -12,9 +12,9 @@ from app.bot.utils.create_forum_topic import (
     get_or_create_forum_topic,
     edit_forum_topic_title,
 )
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.models import UserData
-from app.bot.utils.redis.stats import StatsStorage
+from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.models import UserData
+from app.bot.utils.postgres.stats import StatsStorage
 
 router = Router()
 router.message.filter(F.chat.type == "private", StateFilter(None))
@@ -44,7 +44,7 @@ async def handle_edited_message(message: Message, manager: Manager) -> None:
 async def handle_incoming_message(
         message: Message,
         manager: Manager,
-        redis: RedisStorage,
+        redis: PostgresStorage,
         stats_storage: StatsStorage,
         user_data: UserData,
         album: Album | None = None,
@@ -55,7 +55,7 @@ async def handle_incoming_message(
 
     :param message: The incoming message.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :param user_data: UserData object.
     :param album: Album object or None.
     :return: None

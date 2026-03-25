@@ -9,8 +9,8 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramRetryAfter
 
 from app.config import Config
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.models import UserData
+from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.models import UserData
 from app.bot.utils.create_forum_topic import delete_forum_topic
 import logging
 
@@ -98,7 +98,7 @@ def is_user_in_date_range(user: UserData, start_date: datetime, end_date: dateti
 async def delete_topics_by_date_range(
     bot: Bot,
     config: Config,
-    redis: RedisStorage,
+    redis: PostgresStorage,
     start_date: datetime,
     end_date: datetime,
 ) -> Tuple[int, int, List[int]]:

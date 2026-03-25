@@ -6,13 +6,13 @@ from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 
 from app.config import Config
 from .exceptions import CreateForumTopicException, NotEnoughRightsException, NotAForumException
-from .redis import RedisStorage
-from .redis.models import UserData
+from .postgres import PostgresStorage
+from .postgres.models import UserData
 
 
 async def get_or_create_forum_topic(
         bot: Bot,
-        redis: RedisStorage,
+        redis: PostgresStorage,
         config: Config,
         user_data: UserData,
 ) -> int:

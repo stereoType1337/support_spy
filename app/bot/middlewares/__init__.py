@@ -18,8 +18,8 @@ def register_middlewares(dp: Dispatcher, **kwargs) -> None:
     Returns:
         None
     """
-    # Register RedisMiddleware with the provided Redis instance
-    dp.update.outer_middleware.register(RedisMiddleware(kwargs["redis"]))
+    # Register RedisMiddleware with the provided PostgreSQL pool
+    dp.update.outer_middleware.register(RedisMiddleware(kwargs["pool"]))
     # Register ManagerMiddleware
     dp.update.outer_middleware.register(ManagerMiddleware())
 

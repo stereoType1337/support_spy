@@ -11,8 +11,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.manager import Manager
 from app.bot.types.album import Album
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.stats import StatsStorage
+from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
 from app.bot.utils.api import get_user_info, get_user_keys, format_user_info_message
 from app.bot.handlers.group.command import get_presets, ANS_CB_PREFIX
@@ -45,7 +45,7 @@ async def build_topic_keyboard(manager: Manager, user_id: int) -> InlineKeyboard
 
 
 @router.message(F.forum_topic_created)
-async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
+async def handler(message: Message, manager: Manager, redis: PostgresStorage) -> None:
     await asyncio.sleep(3)
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
     if not user_data:
@@ -92,14 +92,14 @@ async def handler(message: Message) -> None:
 
 @router.message(F.media_group_id, F.from_user[F.is_bot.is_(False)])
 @router.message(F.media_group_id.is_(None), F.from_user[F.is_bot.is_(False)])
-async def handler(message: Message, manager: Manager, redis: RedisStorage, stats_storage: StatsStorage, album: Optional[Album] = None) -> None:
+async def handler(message: Message, manager: Manager, redis: PostgresStorage, stats_storage: StatsStorage, album: Optional[Album] = None) -> None:
     """
     Handles user messages and sends them to the respective user.
     If silent mode is enabled for the user, the messages are ignored.
 
     :param message: Message object.
     :param manager: Manager object.
-    :param redis: RedisStorage object.
+    :param redis: PostgresStorage object.
     :param album: Album object or None.
     :return: None
     """

@@ -6,7 +6,7 @@ services:
     command: sh -c "cd /usr/src/app && python -m app"
     restart: always
     depends_on:
-      - redis
+      - postgres
     volumes:
       - .:/usr/src/app
     networks:
@@ -14,12 +14,18 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  redis:
-    image: redis:alpine
-    container_name: support-redis-ray
+  postgres:
+    image: postgres:16-alpine
+    container_name: support-postgres-ray
     restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-support_bot}
+      POSTGRES_USER: ${POSTGRES_USER:-bot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bot_secret_password}
     volumes:
-      - ./redis/data/:/data
+      - ./postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - support-network
 
