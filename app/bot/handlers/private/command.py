@@ -1,14 +1,16 @@
 from aiogram import Router, F
 from aiogram.filters import Command, MagicData
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_newsletter.manager import ANManager
 
 from app.bot.handlers.private.windows import Window
 from app.bot.manager import Manager
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
 from app.bot.utils.postgres import PostgresStorage
+from app.bot.utils.postgres.stats import StatsStorage
 from app.bot.utils.postgres.models import UserData
-from app.bot.utils.delete_topics import parse_date_range, delete_topics_by_date_range
+from app.bot.utils.delete_topics import parse_date_range, get_topics_to_delete, delete_topics_by_user_ids
 
 router = Router()
 router.message.filter(F.chat.type == "private")
@@ -109,6 +111,13 @@ async def handle_bot_reply(message: Message, manager: Manager, redis: PostgresSt
             pass
 
 
+DELETE_CONFIRM_PREFIX = "del_topics_confirm:"
+DELETE_CANCEL_CB = "del_topics_cancel"
+
+# Временное хранилище для pending удалений {user_id: {"user_ids": [...], "start": str, "end": str}}
+_pending_deletions: dict = {}
+
+
 @router.message(
     Command("delete_topics"),
     MagicData(F.event_from_user.id == F.config.bot.DEV_ID),  # type: ignore
@@ -117,27 +126,24 @@ async def handle_delete_topics(
     message: Message,
     manager: Manager,
     redis: PostgresStorage,
+    stats_storage: StatsStorage,
 ) -> None:
     """
     Handles the /delete_topics command for mass deletion of forum topics.
 
     Usage: /delete_topics DD.MM.YYYY-DD.MM.YYYY
     Example: /delete_topics 01.12.2024-05.12.2024
-
-    :param message: Message object.
-    :param manager: Manager object.
-    :param redis: PostgresStorage object.
-    :return: None
+    Filters by last activity date (topic_stats.updated_at), not by creation date.
     """
-    # Получаем аргументы команды
     command_text = message.text or ""
     parts = command_text.split(maxsplit=1)
-    
+
     if len(parts) < 2:
         await message.answer(
             "❌ <b>Неверный формат команды</b>\n\n"
             "Использование: <code>/delete_topics DD.MM.YYYY-DD.MM.YYYY</code>\n\n"
-            "Пример: <code>/delete_topics 01.12.2024-05.12.2024</code>",
+            "Пример: <code>/delete_topics 01.12.2024-05.12.2024</code>\n\n"
+            "Фильтрует по дате последнего сообщения в топике.",
             parse_mode="HTML"
         )
         await manager.delete_message(message)
@@ -158,32 +164,95 @@ async def handle_delete_topics(
 
     start_date, end_date = date_range
 
-    # Отправляем сообщение о начале процесса
     status_msg = await message.answer(
-        f"⏳ <b>Начинаю удаление топиков...</b>\n\n"
-        f"📅 Период: {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}\n"
-        f"⏸ Пожалуйста, подождите...",
+        f"⏳ <b>Подсчитываю топики...</b>\n\n"
+        f"📅 Период: {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}",
         parse_mode="HTML"
     )
 
-    # Выполняем удаление
-    deleted_count, error_count, deleted_thread_ids = await delete_topics_by_date_range(
-        message.bot,
-        manager.config,
-        redis,
-        start_date,
-        end_date,
+    user_ids = await get_topics_to_delete(redis, stats_storage, start_date, end_date)
+
+    if not user_ids:
+        await status_msg.edit_text(
+            f"📅 Период: {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}\n\n"
+            f"Топиков для удаления не найдено.",
+            parse_mode="HTML"
+        )
+        await manager.delete_message(message)
+        return
+
+    # Сохраняем данные для подтверждения
+    _pending_deletions[message.from_user.id] = {
+        "user_ids": user_ids,
+        "start": start_date.strftime('%d.%m.%Y'),
+        "end": end_date.strftime('%d.%m.%Y'),
+    }
+
+    kb = InlineKeyboardBuilder()
+    kb.row(
+        InlineKeyboardButton(
+            text=f"Удалить {len(user_ids)} топиков",
+            callback_data=f"{DELETE_CONFIRM_PREFIX}{message.from_user.id}",
+        ),
+        InlineKeyboardButton(text="Отмена", callback_data=DELETE_CANCEL_CB),
     )
 
-    # Формируем результат
+    await status_msg.edit_text(
+        f"📅 Период: {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}\n"
+        f"🗑 Будет удалено: <b>{len(user_ids)}</b> топиков\n\n"
+        f"Фильтр: по дате последней активности в топике.\n\n"
+        f"Подтвердите удаление:",
+        parse_mode="HTML",
+        reply_markup=kb.as_markup(),
+    )
+    await manager.delete_message(message)
+
+
+@router.callback_query(F.data == DELETE_CANCEL_CB)
+async def handle_delete_cancel(callback: CallbackQuery) -> None:
+    _pending_deletions.pop(callback.from_user.id, None)
+    await callback.message.edit_text("❌ Удаление отменено.", parse_mode="HTML")
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith(DELETE_CONFIRM_PREFIX))
+async def handle_delete_confirm(
+    callback: CallbackQuery,
+    manager: Manager,
+    redis: PostgresStorage,
+) -> None:
+    pending = _pending_deletions.pop(callback.from_user.id, None)
+    if not pending:
+        await callback.message.edit_text("❌ Данные устарели. Повторите команду.", parse_mode="HTML")
+        await callback.answer()
+        return
+
+    user_ids = pending["user_ids"]
+    start_str = pending["start"]
+    end_str = pending["end"]
+
+    await callback.message.edit_text(
+        f"⏳ <b>Удаляю {len(user_ids)} топиков...</b>\n\n"
+        f"📅 Период: {start_str} - {end_str}\n"
+        f"⏸ Пожалуйста, подождите...",
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+    deleted_count, error_count, _ = await delete_topics_by_user_ids(
+        callback.bot,
+        manager.config,
+        redis,
+        user_ids,
+    )
+
     result_text = (
         f"✅ <b>Удаление завершено</b>\n\n"
-        f"📅 Период: {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}\n"
+        f"📅 Период: {start_str} - {end_str}\n"
         f"✅ Успешно удалено: <b>{deleted_count}</b> топиков\n"
     )
-    
+
     if error_count > 0:
         result_text += f"❌ Ошибок: <b>{error_count}</b>\n"
 
-    await status_msg.edit_text(result_text, parse_mode="HTML")
-    await manager.delete_message(message)
+    await callback.message.edit_text(result_text, parse_mode="HTML")
