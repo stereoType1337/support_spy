@@ -60,8 +60,8 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
 
     if user_info:
         keys = await get_user_keys(manager.config.api, user_data.id)
-        traffic_gb = await get_user_traffic(manager.config.remna, keys)
-        text = format_user_info_message(user_info, keys, traffic_gb)
+        traffic = await get_user_traffic(manager.config.remna, keys)
+        text = format_user_info_message(user_info, keys, traffic)
     else:
         url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
         text = manager.text_message.get("user_started_bot")
@@ -104,7 +104,9 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage, st
     :param album: Album object or None.
     :return: None
     """
+    print(f"[DEBUG] Group handler: thread_id={message.message_thread_id}, from={message.from_user.id if message.from_user else None}")
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
+    print(f"[DEBUG] User data found: {user_data is not None}, user_id={user_data.id if user_data else None}")
     if not user_data: return None  # noqa
 
     if user_data.message_silent_mode:

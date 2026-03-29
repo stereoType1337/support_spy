@@ -33,6 +33,8 @@ class RedisMiddleware(BaseMiddleware):
         chat: Chat = data.get("event_chat")
         user: User = data.get("event_from_user")
 
+        print(f"[DEBUG] Middleware: chat_type={chat.type if chat else None}, chat_id={chat.id if chat else None}, user_id={user.id if user else None}")
+
         if chat.type == "private" and user is not None:
             user_db = await storage.get_user(user.id)
             user_data = user_db or UserData(

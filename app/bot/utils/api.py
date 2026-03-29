@@ -55,18 +55,19 @@ async def get_user_keys(api_config: ApiConfig, user_tg_id: int) -> List[Dict[str
         return []
 
 
-async def get_user_traffic(remna_config: RemnaConfig, keys: List[Dict[str, Any]]) -> Optional[float]:
+async def get_user_traffic(remna_config: RemnaConfig, keys: List[Dict[str, Any]]) -> Optional[Dict[str, float]]:
     """
     Получает суммарный трафик пользователя из Remna API по его ключам.
 
     :param remna_config: Конфигурация Remna.
     :param keys: Список ключей пользователя.
-    :return: Трафик в ГБ или None.
+    :return: {"total": ГБ, "daily": ГБ} или None.
     """
     if not remna_config.URL or not remna_config.TOKEN:
         return None
 
     total_bytes = 0
+    today_bytes = 0
     found = False
 
     headers = {
@@ -74,21 +75,35 @@ async def get_user_traffic(remna_config: RemnaConfig, keys: List[Dict[str, Any]]
         "accept": "application/json",
     }
 
+    today = datetime.utcnow().strftime("%Y-%m-%dT00:00:00.000Z")
+    today_end = datetime.utcnow().strftime("%Y-%m-%dT23:59:59.999Z")
+
     try:
         async with aiohttp.ClientSession() as session:
             for key in keys:
                 client_id = key.get("client_id")
                 if not client_id:
                     continue
+                # Общий трафик
                 url = f"{remna_config.URL}/api/users/{client_id}"
                 try:
                     async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=5)) as resp:
                         if resp.status == 200:
                             data = await resp.json()
                             response_data = data.get("response", data)
-                            used = response_data.get("usedTrafficBytes", 0)
-                            total_bytes += used
+                            total_bytes += response_data.get("usedTrafficBytes", 0)
                             found = True
+                except Exception:
+                    continue
+                # Дневной трафик
+                usage_url = f"{remna_config.URL}/api/users/stats/usage/{client_id}/range"
+                params = {"start": today, "end": today_end}
+                try:
+                    async with session.get(usage_url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            for entry in data.get("response", []):
+                                today_bytes += entry.get("total", 0)
                 except Exception:
                     continue
     except Exception:
@@ -97,10 +112,13 @@ async def get_user_traffic(remna_config: RemnaConfig, keys: List[Dict[str, Any]]
     if not found:
         return None
 
-    return round(total_bytes / 1073741824, 2)
+    return {
+        "total": round(total_bytes / 1073741824, 2),
+        "daily": round(today_bytes / 1073741824, 2),
+    }
 
 
-def format_user_info_message(user_info: Dict[str, Any], keys: List[Dict[str, Any]], traffic_gb: Optional[float] = None) -> str:
+def format_user_info_message(user_info: Dict[str, Any], keys: List[Dict[str, Any]], traffic: Optional[Dict[str, float]] = None) -> str:
     """
     Форматирует сообщение с информацией о пользователе и его ключах.
 
@@ -147,8 +165,9 @@ def format_user_info_message(user_info: Dict[str, Any], keys: List[Dict[str, Any
         f"📅 <b>Дата регистрации:</b> {reg_date}",
     ]
 
-    if traffic_gb is not None:
-        message_parts.append(f"📊 <b>Трафик за месяц:</b> {traffic_gb} ГБ")
+    if traffic is not None:
+        message_parts.append(f"📊 <b>Трафик за месяц:</b> {traffic['total']} ГБ")
+        message_parts.append(f"📊 <b>Трафик за сегодня:</b> {traffic['daily']} ГБ")
 
     # Форматирование ключей
     if keys:
