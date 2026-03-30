@@ -125,16 +125,17 @@ class StatsStorage:
         async with self.pool.acquire() as conn:
             rows = await conn.fetch("""
                 SELECT u.id, u.full_name, u.username, u.message_thread_id,
-                       ts.topic_link, u.created_at
+                       ts.topic_link, ts.created_at
                 FROM users u
-                LEFT JOIN topic_stats ts ON u.message_thread_id = ts.message_thread_id
+                JOIN topic_stats ts ON u.message_thread_id = ts.message_thread_id
                 WHERE u.has_sent_message = true
                   AND u.has_bot_replied = false
                   AND u.is_banned = false
                   AND u.is_bot_stopped = false
                   AND u.state != 'kicked'
-                  AND u.created_at::date = CURRENT_DATE
-                ORDER BY u.created_at
+                  AND ts.responder_counts = '{}'
+                  AND ts.updated_at::date = CURRENT_DATE
+                ORDER BY ts.updated_at
             """)
             return [
                 {
