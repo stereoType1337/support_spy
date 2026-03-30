@@ -16,6 +16,7 @@ router.callback_query.filter(F.message.chat.type == "private")
 STATS_PREFIX = "stats_"
 STATS_PERIOD_PREFIX = "stats_period_"
 STATS_CSV_PREFIX = "stats_csv_"
+STATS_UNANSWERED = "stats_unanswered"
 
 
 def build_stats_keyboard() -> InlineKeyboardBuilder:
@@ -34,7 +35,10 @@ def build_stats_keyboard() -> InlineKeyboardBuilder:
     kb.button(text="📥 CSV 30 дней", callback_data=f"{STATS_CSV_PREFIX}30")
     kb.button(text="📥 CSV всё время", callback_data=f"{STATS_CSV_PREFIX}all")
 
-    kb.adjust(4, 4)
+    # Кнопка неотвеченных топиков
+    kb.button(text="📋 Неотвеченные сегодня", callback_data=STATS_UNANSWERED)
+
+    kb.adjust(4, 4, 1)
     return kb
 
 
@@ -137,3 +141,36 @@ async def handle_stats_csv(call: CallbackQuery, stats_storage: StatsStorage) -> 
         caption=f"📥 Экспорт топиков за {period_name.replace('_', ' ')}"
     )
     await call.answer("Файл отправлен!")
+
+
+@router.callback_query(F.data == STATS_UNANSWERED)
+async def handle_unanswered_topics(call: CallbackQuery, stats_storage: StatsStorage) -> None:
+    """Handle unanswered topics request — sends .txt file."""
+    topics = await stats_storage.get_unanswered_topics_today()
+
+    now = datetime.now(timezone(timedelta(hours=3)))
+    date_str = now.strftime("%Y-%m-%d")
+
+    if not topics:
+        await call.answer("Нет неотвеченных топиков за сегодня", show_alert=True)
+        return
+
+    lines = [f"Неотвеченные топики за {date_str}", ""]
+    for i, t in enumerate(topics, 1):
+        username = f" (@{t['username']})" if t["username"] and t["username"] != "-" else ""
+        link = t["topic_link"] or f"thread #{t['message_thread_id']}"
+        lines.append(f"{i}. {t['full_name']}{username} — {link}")
+
+    lines.append("")
+    lines.append(f"Итого: {len(topics)}")
+
+    content = "\n".join(lines)
+    filename = f"unanswered_{date_str}.txt"
+
+    file = BufferedInputFile(
+        content.encode("utf-8"),
+        filename=filename,
+    )
+
+    await call.message.answer_document(file, caption=f"📋 Неотвеченные топики за {date_str}")
+    await call.answer()

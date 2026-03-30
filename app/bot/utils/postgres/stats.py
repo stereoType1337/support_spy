@@ -121,6 +121,33 @@ class StatsStorage:
                 VALUES ($1,$2,$3,$4)
             """, message_thread_id, responder_id, responder_name, now)
 
+    async def get_unanswered_topics_today(self) -> List[dict]:
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT u.id, u.full_name, u.username, u.message_thread_id,
+                       ts.topic_link, u.created_at
+                FROM users u
+                LEFT JOIN topic_stats ts ON u.message_thread_id = ts.message_thread_id
+                WHERE u.has_sent_message = true
+                  AND u.has_bot_replied = false
+                  AND u.is_banned = false
+                  AND u.is_bot_stopped = false
+                  AND u.state != 'kicked'
+                  AND u.created_at::date = CURRENT_DATE
+                ORDER BY u.created_at
+            """)
+            return [
+                {
+                    "id": row["id"],
+                    "full_name": row["full_name"],
+                    "username": row["username"],
+                    "message_thread_id": row["message_thread_id"],
+                    "topic_link": row["topic_link"],
+                    "created_at": row["created_at"],
+                }
+                for row in rows
+            ]
+
     async def get_all_topics(self) -> List[TopicStats]:
         async with self.pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM topic_stats")
