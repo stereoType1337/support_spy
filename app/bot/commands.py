@@ -23,12 +23,10 @@ async def setup(bot: Bot, config: Config) -> None:
         "en": [
             BotCommand(command="start", description="Restart bot"),
             BotCommand(command="source", description="Source code"),
-            BotCommand(command="topics", description="Unanswered topics today"),
         ],
         "ru": [
             BotCommand(command="start", description="Перезапустить бота"),
             BotCommand(command="source", description="Исходники бота"),
-            BotCommand(command="topics", description="Неотвеченные топики за сегодня"),
         ]
     }
 
