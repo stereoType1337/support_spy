@@ -23,10 +23,12 @@ async def setup(bot: Bot, config: Config) -> None:
         "en": [
             BotCommand(command="start", description="Restart bot"),
             BotCommand(command="source", description="Source code"),
+            BotCommand(command="topics", description="Unanswered topics today"),
         ],
         "ru": [
             BotCommand(command="start", description="Перезапустить бота"),
             BotCommand(command="source", description="Исходники бота"),
+            BotCommand(command="topics", description="Неотвеченные топики за сегодня"),
         ]
     }
 
@@ -50,6 +52,7 @@ async def setup(bot: Bot, config: Config) -> None:
             BotCommand(command="ban", description="Block/Unblock user"),
             BotCommand(command="silent", description="Silent mode on/off"),
             BotCommand(command="information", description="User info"),
+            BotCommand(command="topics", description="Unanswered topics today"),
         ],
         "ru": [
             BotCommand(command="help", description="Справка по командам"),
@@ -61,6 +64,7 @@ async def setup(bot: Bot, config: Config) -> None:
             BotCommand(command="ban", description="Бан/разбан"),
             BotCommand(command="silent", description="Тихий режим"),
             BotCommand(command="information", description="Инфо о пользователе"),
+            BotCommand(command="topics", description="Неотвеченные топики за сегодня"),
         ]
     }
 
@@ -72,7 +76,6 @@ async def setup(bot: Bot, config: Config) -> None:
                 BotCommand(command="newsletter", description="Newsletter menu"),
                 BotCommand(command="delete_topics", description="Delete topics by date range (DD.MM.YYYY-DD.MM.YYYY)"),
                 BotCommand(command="stats", description="Support statistics"),
-                BotCommand(command="topics", description="Unanswered topics today"),
             ],
         "ru":
             commands["ru"].copy() +
@@ -80,7 +83,6 @@ async def setup(bot: Bot, config: Config) -> None:
                 BotCommand(command="newsletter", description="Меню рассылки"),
                 BotCommand(command="delete_topics", description="Удалить топики за период (DD.MM.YYYY-DD.MM.YYYY)"),
                 BotCommand(command="stats", description="Статистика поддержки"),
-                BotCommand(command="topics", description="Неотвеченные топики за сегодня"),
             ],
     }
 

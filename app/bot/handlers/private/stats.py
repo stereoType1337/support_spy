@@ -174,10 +174,7 @@ async def handle_unanswered_topics(call: CallbackQuery, stats_storage: StatsStor
     await call.answer()
 
 
-@router.message(
-    Command("topics"),
-    MagicData(F.event_from_user.id.in_(F.config.bot.DEV_IDS)),
-)
+@router.message(Command("topics"))
 async def handle_topics_command(message: Message, manager: Manager, stats_storage: StatsStorage) -> None:
     """Handle /topics command — send unanswered topics as a message."""
     topics = await stats_storage.get_unanswered_topics_today()
