@@ -9,8 +9,6 @@ from app.bot.manager import Manager
 from app.bot.utils.postgres.stats import StatsStorage
 
 router = Router()
-router.message.filter(F.chat.type == "private")
-router.callback_query.filter(F.message.chat.type == "private")
 
 # Callback data prefixes
 STATS_PREFIX = "stats_"

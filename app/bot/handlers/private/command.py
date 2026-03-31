@@ -15,6 +15,9 @@ from app.bot.utils.delete_topics import parse_date_range, get_topics_to_delete, 
 router = Router()
 router.message.filter(F.chat.type == "private")
 
+# Отдельный роутер для dev-команд, работающих в любых чатах (private + group)
+router_dev = Router()
+
 
 @router.message(Command("start"))
 async def handler(
@@ -118,7 +121,7 @@ DELETE_CANCEL_CB = "del_topics_cancel"
 _pending_deletions: dict = {}
 
 
-@router.message(
+@router_dev.message(
     Command("delete_topics"),
     MagicData(F.event_from_user.id.in_(F.config.bot.DEV_IDS)),  # type: ignore
 )
@@ -208,14 +211,14 @@ async def handle_delete_topics(
     await manager.delete_message(message)
 
 
-@router.callback_query(F.data == DELETE_CANCEL_CB)
+@router_dev.callback_query(F.data == DELETE_CANCEL_CB)
 async def handle_delete_cancel(callback: CallbackQuery) -> None:
     _pending_deletions.pop(callback.from_user.id, None)
     await callback.message.edit_text("❌ Удаление отменено.", parse_mode="HTML")
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith(DELETE_CONFIRM_PREFIX))
+@router_dev.callback_query(F.data.startswith(DELETE_CONFIRM_PREFIX))
 async def handle_delete_confirm(
     callback: CallbackQuery,
     manager: Manager,
