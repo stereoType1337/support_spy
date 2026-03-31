@@ -174,18 +174,13 @@ async def handle_unanswered_topics(call: CallbackQuery, stats_storage: StatsStor
     await call.answer()
 
 
-@router.message(Command("topics"))
-async def handle_topics_command(message: Message, manager: Manager, stats_storage: StatsStorage) -> None:
-    """Handle /topics command — send unanswered topics as a message."""
-    topics = await stats_storage.get_unanswered_topics_today()
+def format_unanswered_topics_message(topics: list[dict], date_str: str) -> str | None:
+    """Format unanswered topics into an HTML message. Returns None if no topics."""
+    if not topics:
+        return None
 
     now = datetime.now(timezone(timedelta(hours=3)))
-    date_str = now.strftime("%Y-%m-%d")
-
-    if not topics:
-        await message.answer("Нет неотвеченных топиков за сегодня.")
-        await manager.delete_message(message)
-        return
+    time_str = now.strftime("%H:%M")
 
     lines = [f"📋 <b>Неотвеченные топики за {date_str}</b>\n"]
     for i, t in enumerate(topics, 1):
@@ -194,6 +189,23 @@ async def handle_topics_command(message: Message, manager: Manager, stats_storag
         lines.append(f"{i}. <a href=\"{link}\">{t['full_name']}{username}</a>")
 
     lines.append(f"\nИтого: <b>{len(topics)}</b>")
+    lines.append(f"\n<i>Обновлено в {time_str}</i>")
+    return "\n".join(lines)
 
-    await message.answer("\n".join(lines), parse_mode="HTML", disable_web_page_preview=True)
+
+@router.message(Command("topics"))
+async def handle_topics_command(message: Message, manager: Manager, stats_storage: StatsStorage) -> None:
+    """Handle /topics command — send unanswered topics as a message."""
+    topics = await stats_storage.get_unanswered_topics_today()
+
+    now = datetime.now(timezone(timedelta(hours=3)))
+    date_str = now.strftime("%Y-%m-%d")
+
+    text = format_unanswered_topics_message(topics, date_str)
+    if not text:
+        await message.answer("Нет неотвеченных топиков за сегодня.")
+        await manager.delete_message(message)
+        return
+
+    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True)
     await manager.delete_message(message)

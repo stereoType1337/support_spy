@@ -8,6 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .bot import commands
 from .bot.handlers import include_routers
+from .bot.jobs.unanswered_topics import update_unanswered_topics
 from .bot.middlewares import register_middlewares
 from .bot.utils.postgres.database import create_pool, init_db
 from .config import load_config, Config
@@ -87,6 +88,15 @@ async def main() -> None:
     register_middlewares(
         dp, config=config, pool=pool, apscheduler=apscheduler
     )
+
+    # Scheduled job: update unanswered topics message every 5 minutes
+    if config.bot.TOPICS_CHAT_ID:
+        apscheduler.add_job(
+            update_unanswered_topics,
+            "interval",
+            minutes=5,
+            args=[bot, pool, config],
+        )
 
     await bot.delete_webhook()
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())

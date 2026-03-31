@@ -17,7 +17,9 @@ class BotConfig:
     DEV_IDS: set[int]
     GROUP_ID: int
     BOT_EMOJI_ID: str
-    ADMIN_IDS: set[int]  # <-- NEW
+    ADMIN_IDS: set[int]
+    TOPICS_CHAT_ID: int | None
+    TOPICS_THREAD_ID: int | None
 
 
 @dataclass
@@ -67,6 +69,8 @@ def load_config() -> Config:
             GROUP_ID=env.int("BOT_GROUP_ID"),
             BOT_EMOJI_ID=env.str("BOT_EMOJI_ID"),
             ADMIN_IDS=parse_admin_ids(admin_ids_raw),
+            TOPICS_CHAT_ID=env.int("TOPICS_CHAT_ID", default=None),
+            TOPICS_THREAD_ID=env.int("TOPICS_THREAD_ID", default=None),
         ),
         postgres=PostgresConfig(
             HOST=env.str("POSTGRES_HOST"),
