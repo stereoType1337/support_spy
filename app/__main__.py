@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .bot import commands
@@ -96,6 +97,7 @@ async def main() -> None:
             "interval",
             minutes=5,
             args=[bot, pool, config],
+            next_run_time=datetime.now(),
         )
 
     await bot.delete_webhook()
