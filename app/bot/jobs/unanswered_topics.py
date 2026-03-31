@@ -39,7 +39,6 @@ async def update_unanswered_topics(bot: Bot, pool: Pool, config: Config) -> None
                 text=text,
                 chat_id=chat_id,
                 message_id=_pinned_message_id,
-                message_thread_id=thread_id,
                 parse_mode="HTML",
                 disable_web_page_preview=True,
             )
