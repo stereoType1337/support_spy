@@ -172,3 +172,31 @@ async def handle_unanswered_topics(call: CallbackQuery, stats_storage: StatsStor
 
     await call.message.answer_document(file, caption=f"📋 Неотвеченные топики за {date_str}")
     await call.answer()
+
+
+@router.message(
+    Command("topics"),
+    MagicData(F.event_from_user.id.in_(F.config.bot.DEV_IDS)),
+)
+async def handle_topics_command(message: Message, manager: Manager, stats_storage: StatsStorage) -> None:
+    """Handle /topics command — send unanswered topics as a message."""
+    topics = await stats_storage.get_unanswered_topics_today()
+
+    now = datetime.now(timezone(timedelta(hours=3)))
+    date_str = now.strftime("%Y-%m-%d")
+
+    if not topics:
+        await message.answer("Нет неотвеченных топиков за сегодня.")
+        await manager.delete_message(message)
+        return
+
+    lines = [f"📋 <b>Неотвеченные топики за {date_str}</b>\n"]
+    for i, t in enumerate(topics, 1):
+        username = f" (@{t['username']})" if t["username"] and t["username"] != "-" else ""
+        link = t["topic_link"] or f"thread #{t['message_thread_id']}"
+        lines.append(f"{i}. <a href=\"{link}\">{t['full_name']}{username}</a>")
+
+    lines.append(f"\nИтого: <b>{len(topics)}</b>")
+
+    await message.answer("\n".join(lines), parse_mode="HTML", disable_web_page_preview=True)
+    await manager.delete_message(message)

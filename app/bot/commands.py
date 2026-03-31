@@ -72,6 +72,7 @@ async def setup(bot: Bot, config: Config) -> None:
                 BotCommand(command="newsletter", description="Newsletter menu"),
                 BotCommand(command="delete_topics", description="Delete topics by date range (DD.MM.YYYY-DD.MM.YYYY)"),
                 BotCommand(command="stats", description="Support statistics"),
+                BotCommand(command="topics", description="Unanswered topics today"),
             ],
         "ru":
             commands["ru"].copy() +
@@ -79,6 +80,7 @@ async def setup(bot: Bot, config: Config) -> None:
                 BotCommand(command="newsletter", description="Меню рассылки"),
                 BotCommand(command="delete_topics", description="Удалить топики за период (DD.MM.YYYY-DD.MM.YYYY)"),
                 BotCommand(command="stats", description="Статистика поддержки"),
+                BotCommand(command="topics", description="Неотвеченные топики за сегодня"),
             ],
     }
 
