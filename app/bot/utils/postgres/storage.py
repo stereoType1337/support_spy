@@ -62,6 +62,18 @@ class PostgresStorage:
             rows = await conn.fetch("SELECT id FROM users")
             return [row["id"] for row in rows]
 
+    async def get_unanswered_user_ids(self) -> list[int]:
+        """Пользователи, которые написали в личку, но модератор/бот ещё не ответил."""
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT id FROM users
+                WHERE has_sent_message = TRUE
+                  AND has_bot_replied = FALSE
+                  AND is_banned = FALSE
+                  AND is_bot_stopped = FALSE
+            """)
+            return [row["id"] for row in rows]
+
     async def get_all_users(self) -> list[UserData]:
         async with self.pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM users")
