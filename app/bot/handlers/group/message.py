@@ -5,17 +5,15 @@ import re
 from aiogram import Router, F
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import MagicData
-from aiogram.types import Message,InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.markdown import hlink
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import Message
 
 from app.bot.manager import Manager
 from app.bot.types.album import Album
 from app.bot.utils.postgres import PostgresStorage
 from app.bot.utils.postgres.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
-from app.bot.utils.api import get_user_info, get_user_keys, get_user_traffic, format_user_info_message
-from app.bot.handlers.group.command import get_presets, ANS_CB_PREFIX
+from app.bot.handlers.group.command import get_presets
+from app.bot.utils.user_card import NO_PREVIEW, build_topic_keyboard, build_user_card
 
 router = Router()
 router.message.filter(
@@ -24,24 +22,6 @@ router.message.filter(
     F.message_thread_id.is_not(None),
 )
 
-
-async def build_topic_keyboard(manager: Manager, user_id: int) -> InlineKeyboardMarkup:
-    presets = await get_presets()
-
-    bot_username = manager.config.api.BOT_USERNAME
-    bot_link = f"https://t.me/{bot_username}?start=search_{user_id}"
-
-    kb = InlineKeyboardBuilder()
-
-    kb.row(
-        InlineKeyboardButton(text="Открыть в боте", url=bot_link)
-    )
-
-    for key in sorted(presets.keys()):
-        kb.button(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
-    kb.adjust(1, 2)
-
-    return kb.as_markup()
 
 
 @router.message(F.forum_topic_created)
@@ -55,29 +35,17 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
             pass
         return None  # noqa
 
-    user_info = await get_user_info(manager.config.api, user_data.id)
-    text = ""
-
-    if user_info:
-        keys = await get_user_keys(manager.config.api, user_data.id)
-        traffic = await get_user_traffic(manager.config.remna, keys)
-        text = format_user_info_message(user_info, keys, traffic)
-    else:
-        url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
-        text = manager.text_message.get("user_started_bot")
-        text = text.format(name=hlink(user_data.full_name, url), id=user_data.id)
-
-    keyboard = await build_topic_keyboard(manager, user_data.id)
+    text, open_url = await build_user_card(manager, user_data)
+    keyboard = build_topic_keyboard(open_url, await get_presets())
 
     sent_message = await message.bot.send_message(
         chat_id=manager.config.bot.GROUP_ID,
         text=text,
         message_thread_id=user_data.message_thread_id,
         reply_markup=keyboard,
-        parse_mode="HTML"
+        link_preview_options=NO_PREVIEW,
     )
-
-    await sent_message.pin()
+    await sent_message.pin(disable_notification=True)
 
 
 @router.message(F.pinned_message | F.forum_topic_edited | F.forum_topic_closed | F.forum_topic_reopened)
@@ -142,16 +110,16 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage, st
                 await edit_forum_topic_title(message.bot, manager.config, user_data.message_thread_id, new_title)
             except Exception:
                 pass
-        text = manager.text_message.get("message_sent_to_user")
+        text = manager.group_text.get("message_sent_to_user")
 
     except TelegramAPIError as ex:
         if "blocked" in ex.message:
-            text = manager.text_message.get("blocked_by_user")
+            text = manager.group_text.get("blocked_by_user")
         else:
-            text = manager.text_message.get("message_not_sent")
+            text = manager.group_text.get("message_not_sent")
 
     except Exception:
-        text = manager.text_message.get("message_not_sent")
+        text = manager.group_text.get("message_not_sent")
 
     if text:
         msg = await message.reply(text)

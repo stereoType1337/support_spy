@@ -1,201 +1,103 @@
-from typing import Optional, List, Dict, Any
-import aiohttp
+import logging
 from datetime import datetime
 
-from app.config import ApiConfig, RemnaConfig
+import aiohttp
+
+from app.config import NotspyConfig
+
+logger = logging.getLogger(__name__)
+
+TIMEOUT = aiohttp.ClientTimeout(total=5)
 
 
-async def get_user_info(api_config: ApiConfig, user_tg_id: int) -> Optional[Dict[str, Any]]:
-    """
-    Получает информацию о пользователе из API.
-
-    :param api_config: Конфигурация API.
-    :param user_tg_id: Telegram ID пользователя.
-    :return: Словарь с информацией о пользователе или None в случае ошибки.
-    """
-    url = f"{api_config.URL}/users/{user_tg_id}"
-    params = {"tg_id": api_config.ADMIN_TG_ID}
-    headers = {
-        "accept": "application/json",
-        "X-Token": api_config.TOKEN,
-    }
-
+async def get_user_info(config: NotspyConfig, user_tg_id: int) -> dict | None:
+    if not config.enabled:
+        return None
+    url = f"{config.URL}/api/support/users/{user_tg_id}"
+    headers = {"X-Token": config.TOKEN, "accept": "application/json"}
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, headers=headers) as response:
+        async with aiohttp.ClientSession(timeout=TIMEOUT) as session:
+            async with session.get(url, headers=headers) as response:
                 if response.status == 200:
                     return await response.json()
-                return None
+                if response.status != 404:
+                    logger.warning("notspy_api_status=%s user=%s", response.status, user_tg_id)
     except Exception:
-        return None
+        logger.warning("notspy_api_failed user=%s", user_tg_id, exc_info=True)
+    return None
 
 
-async def get_user_keys(api_config: ApiConfig, user_tg_id: int) -> List[Dict[str, Any]]:
-    """
-    Получает список ключей пользователя из API.
-
-    :param api_config: Конфигурация API.
-    :param user_tg_id: Telegram ID пользователя.
-    :return: Список словарей с информацией о ключах пользователя.
-    """
-    url = f"{api_config.URL}/keys/all/{user_tg_id}"
-    params = {"tg_id": api_config.ADMIN_TG_ID}
-    headers = {
-        "accept": "application/json",
-        "X-Token": api_config.TOKEN,
-    }
-
+def _date(value: str | None) -> str:
+    if not value:
+        return "—"
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, headers=headers) as response:
-                if response.status == 200:
-                    return await response.json()
-                return []
-    except Exception:
-        return []
+        return datetime.fromisoformat(value).strftime("%d.%m.%Y")
+    except ValueError:
+        return value
 
 
-async def get_user_traffic(remna_config: RemnaConfig, keys: List[Dict[str, Any]]) -> Optional[Dict[str, float]]:
-    """
-    Получает суммарный трафик пользователя из Remna API по его ключам.
-
-    :param remna_config: Конфигурация Remna.
-    :param keys: Список ключей пользователя.
-    :return: {"total": ГБ, "daily": ГБ} или None.
-    """
-    if not remna_config.URL or not remna_config.TOKEN:
-        return None
-
-    total_bytes = 0
-    today_bytes = 0
-    found = False
-
-    headers = {
-        "Authorization": f"Bearer {remna_config.TOKEN}",
-        "accept": "application/json",
-    }
-
-    today = datetime.utcnow().strftime("%Y-%m-%dT00:00:00.000Z")
-    today_end = datetime.utcnow().strftime("%Y-%m-%dT23:59:59.999Z")
-
+def _datetime(value: str | None) -> str:
+    if not value:
+        return "—"
     try:
-        async with aiohttp.ClientSession() as session:
-            for key in keys:
-                client_id = key.get("client_id")
-                if not client_id:
-                    continue
-                # Общий трафик
-                url = f"{remna_config.URL}/api/users/{client_id}"
-                try:
-                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            response_data = data.get("response", data)
-                            total_bytes += response_data.get("usedTrafficBytes", 0)
-                            found = True
-                except Exception:
-                    continue
-                # Дневной трафик
-                usage_url = f"{remna_config.URL}/api/users/stats/usage/{client_id}/range"
-                params = {"start": today, "end": today_end}
-                try:
-                    async with session.get(usage_url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            for entry in data.get("response", []):
-                                today_bytes += entry.get("total", 0)
-                except Exception:
-                    continue
-    except Exception:
-        return None
-
-    if not found:
-        return None
-
-    return {
-        "total": round(total_bytes / 1073741824, 2),
-        "daily": round(today_bytes / 1073741824, 2),
-    }
+        return datetime.fromisoformat(value).strftime("%d.%m.%Y %H:%M")
+    except ValueError:
+        return value
 
 
-def format_user_info_message(user_info: Dict[str, Any], keys: List[Dict[str, Any]], traffic: Optional[Dict[str, float]] = None) -> str:
-    """
-    Форматирует сообщение с информацией о пользователе и его ключах.
+def _flag(value: bool) -> str:
+    return "✅" if value else "❌"
 
-    :param user_info: Информация о пользователе.
-    :param keys: Список ключей пользователя.
-    :return: Отформатированное сообщение.
-    """
-    # Форматирование информации о пользователе
-    tg_id = user_info.get("tg_id", "N/A")
-    username = user_info.get("username", "N/A")
-    username = f"@{username}" if username != "N/A" else "N/A"
-    first_name = user_info.get("first_name", "")
-    last_name = user_info.get("last_name") or ""
-    full_name = f"{first_name} {last_name}".strip() or "N/A"
-    balance = user_info.get("balance", 0)
-    # Форматируем баланс с одной десятичной цифрой
-    balance_str = f"{balance:.1f}" if isinstance(balance, (int, float)) else str(balance)
-    trial = user_info.get("trial", 0)
-    
-    # Форматирование даты регистрации
-    created_at = user_info.get("created_at", "")
-    if created_at:
-        try:
-            # Парсим ISO формат: 2025-09-08T08:04:43.178238
-            dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-            reg_date = dt.strftime("%d.%m.%Y")
-        except Exception:
-            reg_date = created_at[:10] if len(created_at) >= 10 else created_at
-    else:
-        reg_date = "N/A"
 
-    # Статус регистрации
-    status = "Зарегистрирован в боте"
-
-    message_parts = [
-        "👤 <b>Информация о пользователе:</b>",
-        f"",
-        f"🆔 <b>Telegram ID:</b> {tg_id}",
-        f"✅ <b>Статус:</b> {status}",
-        f"👨‍💼 <b>Username:</b> {username}",
-        f"📝 <b>Имя:</b> {full_name}",
-        f"💰 <b>Баланс:</b> {balance_str} руб.",
-        f"🎯 <b>Триал:</b> {trial}",
-        f"📅 <b>Дата регистрации:</b> {reg_date}",
+def format_bot_block(bot: dict) -> str:
+    title = f"@{bot['bot_username']}" if bot.get("bot_username") else f"bot_id {bot['bot_id']}"
+    if bot.get("is_main"):
+        title += " (основной)"
+    lines = [
+        f"🤖 <b>{title}</b>",
+        f"Подключён: {_flag(bot.get('is_connected', False))}",
+        f"Premium: {_flag(bot.get('is_premium', False))}",
+        f"Старт: {_date(bot.get('started_at'))} · Активность: {_date(bot.get('last_active'))}",
     ]
+    if bot.get("utm"):
+        lines.append(f"UTM: {bot['utm']}")
+    if bot.get("is_blocked"):
+        lines.append(f"🚫 Заблокировал бота {_date(bot.get('blocked_at'))}")
 
-    if traffic is not None:
-        message_parts.append(f"📊 <b>Трафик за месяц:</b> {traffic['total']} ГБ")
-        message_parts.append(f"📊 <b>Трафик за сегодня:</b> {traffic['daily']} ГБ")
+    sub = bot.get("subscription")
+    if sub:
+        lines.append(
+            f"💎 Подписка: {sub['status']} {_flag(sub['is_active'])} "
+            f"до {_datetime(sub.get('expires_at'))} ({sub.get('days_left', 0)} дн.)"
+        )
+    else:
+        lines.append("💎 Подписки нет")
 
-    # Форматирование ключей
-    if keys:
-        message_parts.append("")
-        message_parts.append(f"🔑 <b>Ключи пользователя ({len(keys)}):</b>")
-        message_parts.append("")
-        
-        for idx, key in enumerate(keys, 1):
-            email = key.get("email", "N/A")
-            server_id = key.get("server_id", "N/A")
-            
-            # Форматирование даты истечения
-            expiry_time = key.get("expiry_time")
-            if expiry_time:
-                try:
-                    # expiry_time в миллисекундах
-                    expiry_dt = datetime.fromtimestamp(expiry_time / 1000)
-                    expiry_str = expiry_dt.strftime("%d.%m.%Y %H:%M")
-                except Exception:
-                    expiry_str = str(expiry_time)
-            else:
-                expiry_str = "N/A"
+    ref = bot.get("referral")
+    if ref and (ref.get("invited") or ref.get("earned_total")):
+        lines.append(
+            f"💰 Рефералы: {ref['invited']} · баланс {ref['balance']} ₽ "
+            f"(заработано {ref['earned_total']}, выведено {ref['withdrawn_total']})"
+        )
+    return "\n".join(lines)
 
-            message_parts.append(f"   {idx}. {email}")
-            message_parts.append(f"      ⏰ <b>Истекает:</b> {expiry_str}")
-            message_parts.append(f"      🖥 <b>Сервер:</b> {server_id}")
-            if idx < len(keys):
-                message_parts.append("")
 
-    return "\n".join(message_parts)
+def format_user_info_message(info: dict, name_link: str) -> str:
+    bots = info.get("bots", [])
+    first = bots[0] if bots else {}
+    username = f"@{first['username']}" if first.get("username") else "—"
+    header = (
+        f"👤 {name_link}\n\n"
+        f"<b>ID:</b> <code>{info['chat_id']}</code>\n"
+        f"<b>Username:</b> {username}\n"
+    )
+    blocks = [format_bot_block(bot) for bot in bots]
+    return header + "\n" + "\n\n".join(blocks)
 
+
+def pick_open_url(info: dict | None, fallback_username: str) -> str:
+    if info:
+        for bot in info.get("bots", []):
+            if bot.get("deeplink"):
+                return bot["deeplink"]
+    return f"https://t.me/{fallback_username}"

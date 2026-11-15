@@ -1,11 +1,11 @@
 from aiogram import Router, F
 from aiogram.enums import ChatMemberStatus
 from aiogram.types import ChatMemberUpdated
-from aiogram.utils.markdown import hlink
 
 from app.bot.manager import Manager
 from app.bot.utils.postgres import PostgresStorage
 from app.bot.utils.postgres.models import UserData
+from app.bot.utils.user_card import NO_PREVIEW, user_link
 
 router = Router()
 router.my_chat_member.filter(F.chat.type == "private")
@@ -32,14 +32,13 @@ async def handle_chat_member_update(
     await redis.update_user(user_data.id, user_data)
 
     if user_data.state == ChatMemberStatus.MEMBER:
-        text = manager.text_message.get("user_restarted_bot")
+        text = manager.group_text.get("user_restarted_bot")
     else:
-        text = manager.text_message.get("user_stopped_bot")
-
-    url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
+        text = manager.group_text.get("user_stopped_bot")
 
     await update.bot.send_message(
         chat_id=manager.config.bot.GROUP_ID,
-        text=text.format(name=hlink(user_data.full_name, url)),
+        text=text.format(name=user_link(user_data)),
         message_thread_id=user_data.message_thread_id,
+        link_preview_options=NO_PREVIEW,
     )

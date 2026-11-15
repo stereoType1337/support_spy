@@ -35,25 +35,21 @@ class PostgresConfig:
 
 
 @dataclass
-class RemnaConfig:
+class NotspyConfig:
     URL: str
     TOKEN: str
-
-
-@dataclass
-class ApiConfig:
-    URL: str
-    TOKEN: str
-    ADMIN_TG_ID: int
     BOT_USERNAME: str
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.URL and self.TOKEN)
 
 
 @dataclass
 class Config:
     bot: BotConfig
     postgres: PostgresConfig
-    api: ApiConfig
-    remna: RemnaConfig
+    notspy: NotspyConfig
 
 
 def load_config() -> Config:
@@ -79,14 +75,9 @@ def load_config() -> Config:
             USER=env.str("POSTGRES_USER"),
             PASSWORD=env.str("POSTGRES_PASSWORD"),
         ),
-        api=ApiConfig(
-            URL=env.str("API_URL", default="https://bot.raytun.ru/api"),
-            TOKEN=env.str("API_TOKEN"),
-            ADMIN_TG_ID=env.int("API_ADMIN_TG_ID"),
-            BOT_USERNAME=env.str("BOT_USERNAME", default="vpn_plus777_bot"),
-        ),
-        remna=RemnaConfig(
-            URL=env.str("REMNA_URL", default=""),
-            TOKEN=env.str("REMNA_TOKEN", default=""),
+        notspy=NotspyConfig(
+            URL=env.str("NOTSPY_API_URL", default="").rstrip("/"),
+            TOKEN=env.str("NOTSPY_API_TOKEN", default=""),
+            BOT_USERNAME=env.str("NOTSPY_BOT_USERNAME", default="notspybotbot"),
         ),
     )

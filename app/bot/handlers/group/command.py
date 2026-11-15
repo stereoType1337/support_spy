@@ -10,15 +10,14 @@ from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from aiogram.filters import Command, MagicData
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import InlineKeyboardButton
-from aiogram.utils.markdown import hcode, hbold, hlink
+from aiogram.utils.markdown import hcode, hbold
 from aiogram.utils.text_decorations import html_decoration as hd
 
 from app.bot.manager import Manager
-from app.bot.utils.api import get_user_info, get_user_keys, get_user_traffic, format_user_info_message
 from app.bot.utils.postgres import PostgresStorage
 from app.bot.utils.postgres.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
+from app.bot.utils.user_card import ANS_CB_PREFIX, NO_PREVIEW, build_topic_keyboard, build_user_card
 
 router_id = Router()
 router_id.message.filter(
@@ -51,7 +50,6 @@ router.message.filter(
     MagicData(F.event_chat.id == F.config.bot.GROUP_ID),  # type: ignore
 )
 
-ANS_CB_PREFIX = "ans:"
 PRESETS_FILE = Path(__file__).with_name("ans_presets.json")
 _PRESETS_LOCK = asyncio.Lock()
 _PRESETS_CACHE: dict[str, str | dict] | None = None
@@ -247,12 +245,12 @@ async def ans_callback(callback: CallbackQuery, manager: Manager, redis: Postgre
     except TelegramAPIError as ex:
         ok = False
         if "blocked" in (ex.message or ""):
-            error_text = manager.text_message.get("blocked_by_user")
+            error_text = manager.group_text.get("blocked_by_user")
         else:
-            error_text = manager.text_message.get("message_not_sent")
+            error_text = manager.group_text.get("message_not_sent")
     except Exception:
         ok = False
-        error_text = manager.text_message.get("message_not_sent")
+        error_text = manager.group_text.get("message_not_sent")
 
     if ok:
         # Обновляем статус диалога
@@ -556,7 +554,7 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
     if not user_data: return None  # noqa
 
     if user_data.message_silent_mode:
-        text = manager.text_message.get("silent_mode_disabled")
+        text = manager.group_text.get("silent_mode_disabled")
         with suppress(TelegramBadRequest):
             # Reply with the specified text
             await message.reply(text)
@@ -570,7 +568,7 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
         user_data.message_silent_mode = False
         user_data.message_silent_id = None
     else:
-        text = manager.text_message.get("silent_mode_enabled")
+        text = manager.group_text.get("silent_mode_enabled")
         with suppress(TelegramBadRequest):
             # Reply with the specified text
             msg = await message.reply(text)
@@ -597,28 +595,9 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
     if not user_data: return None  # noqa
 
-    user_info = await get_user_info(manager.config.api, user_data.id)
-
-    if user_info:
-        keys = await get_user_keys(manager.config.api, user_data.id)
-        traffic = await get_user_traffic(manager.config.remna, keys)
-        text = format_user_info_message(user_info, keys, traffic)
-    else:
-        url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
-        text = manager.text_message.get("user_started_bot")
-        text = text.format(name=hlink(user_data.full_name, url), id=user_data.id)
-
-    presets = await get_presets()
-    bot_username = manager.config.api.BOT_USERNAME
-    bot_link = f"https://t.me/{bot_username}?start=search_{user_data.id}"
-
-    kb = InlineKeyboardBuilder()
-    kb.row(InlineKeyboardButton(text="Открыть в боте", url=bot_link))
-    for key in sorted(presets.keys()):
-        kb.button(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
-    kb.adjust(1, 2)
-
-    await message.reply(text, reply_markup=kb.as_markup(), parse_mode="HTML")
+    text, open_url = await build_user_card(manager, user_data)
+    keyboard = build_topic_keyboard(open_url, await get_presets())
+    await message.reply(text, reply_markup=keyboard, link_preview_options=NO_PREVIEW)
 
 
 @router.message(Command(commands=["ban"]))
@@ -637,10 +616,10 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
 
     if user_data.is_banned:
         user_data.is_banned = False
-        text = manager.text_message.get("user_unblocked")
+        text = manager.group_text.get("user_unblocked")
     else:
         user_data.is_banned = True
-        text = manager.text_message.get("user_blocked")
+        text = manager.group_text.get("user_blocked")
 
     # Reply with the specified text
     await message.reply(text)

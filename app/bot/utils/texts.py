@@ -68,19 +68,12 @@ class TextMessage(Text):
                     "<a href=\"https://github.com/nessshon/support-bot\">GitHub</a>"
                 ),
                 "user_started_bot": (
-                    "<b>User {name} started the bot!</b>\n\n"
-                    "<b>ID:</b>\n"
-                    "- <code>{id}</code>\n\n"
-                    "List of available commands:\n\n"
-                    "• /ban\n"
-                    "Block/Unblock user"
-                    "<blockquote>Block the user if you do not want to receive messages from him.</blockquote>\n\n"
-                    "• /silent\n"
-                    "Activate/Deactivate silent mode"
-                    "<blockquote>When silent mode is enabled, messages are not sent to the user.</blockquote>\n\n"
-                    "• /information\n"
-                    "User information"
-                    "<blockquote>Receive a message with basic information about the user.</blockquote>"
+                    "👤 {name} started the bot\n\n"
+                    "<b>ID:</b> <code>{id}</code>\n"
+                    "<b>Username:</b> {username}\n"
+                    "<b>Language:</b> {language}\n"
+                    "<b>Date:</b> {created_at}\n\n"
+                    "<i>/ans quick reply · /silent silent mode · /ban block</i>"
                 ),
                 "user_restarted_bot": "<b>User {name} restarted the bot!</b>",
                 "user_stopped_bot": "<b>User {name} stopped the bot!</b>",
@@ -142,18 +135,12 @@ class TextMessage(Text):
                     "<a href=\"https://github.com/nessshon/support-bot\">GitHub</a>"
                 ),
                 "user_started_bot": (
-                    "<b>Пользователь {name} запустил(а) бота!</b>\n\n"
-                    "Список доступных команд:\n\n"
-                    "• /ban\n"
-                    "Заблокировать/Разблокировать пользователя"
-                    "<blockquote>Заблокируйте пользователя, если не хотите получать от него сообщения.</blockquote>\n\n"
-                    "• /silent\n"
-                    "Активировать/Деактивировать тихий режим"
-                    "<blockquote>При включенном тихом режиме сообщения не отправляются пользователю.</blockquote>\n\n"
-                    "• /information\n"
-                    "Информация о пользователе"
-                    "<blockquote>Получить сообщение с основной информацией о пользователе.</blockquote>"
-
+                    "👤 {name} запустил(а) бота\n\n"
+                    "<b>ID:</b> <code>{id}</code>\n"
+                    "<b>Username:</b> {username}\n"
+                    "<b>Язык:</b> {language}\n"
+                    "<b>Дата:</b> {created_at}\n\n"
+                    "<i>/ans — быстрый ответ · /silent — тихий режим · /ban — блокировка</i>"
                 ),
                 "user_restarted_bot": "<b>Пользователь {name} перезапустил(а) бота!</b>",
                 "user_stopped_bot": "<b>Пользователь {name} остановил(а) бота!</b>",

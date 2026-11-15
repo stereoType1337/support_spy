@@ -50,6 +50,7 @@ class Manager:
 
         self.config: Config = data.get("config")
         self.text_message = TextMessage(language_code)
+        self.group_text = TextMessage("ru")
 
         self.__emoji = emoji
         self.__data = data
