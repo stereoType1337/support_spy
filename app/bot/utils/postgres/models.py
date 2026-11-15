@@ -20,6 +20,7 @@ class UserData:
     has_bot_replied: bool = False
     is_bot_stopped: bool = False
     is_bot_restarted: bool = False
+    source_bot_id: int | None = None
 
     def to_dict(self) -> dict:
         """

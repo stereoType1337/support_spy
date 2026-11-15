@@ -20,9 +20,10 @@ def user_link(user_data: UserData) -> str:
 
 async def build_user_card(manager: Manager, user_data: UserData) -> tuple[str, str]:
     info = await get_user_info(manager.config.notspy, user_data.id)
-    open_url = pick_open_url(info, manager.config.notspy.BOT_USERNAME)
+    source = user_data.source_bot_id
+    open_url = pick_open_url(info, manager.config.notspy.BOT_USERNAME, source)
     if info:
-        return format_user_info_message(info, user_link(user_data)), open_url
+        return format_user_info_message(info, user_link(user_data), source), open_url
 
     text = manager.group_text.get("user_started_bot").format(
         name=user_link(user_data),

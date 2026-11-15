@@ -49,10 +49,12 @@ def _flag(value: bool) -> str:
     return "✅" if value else "❌"
 
 
-def format_bot_block(bot: dict) -> str:
+def format_bot_block(bot: dict, *, is_source: bool = False) -> str:
     title = f"@{bot['bot_username']}" if bot.get("bot_username") else f"bot_id {bot['bot_id']}"
     if bot.get("is_main"):
         title += " (основной)"
+    if is_source:
+        title += " 📍 обратился отсюда"
     lines = [
         f"🤖 <b>{title}</b>",
         f"Подключён: {_flag(bot.get('is_connected', False))}",
@@ -82,8 +84,16 @@ def format_bot_block(bot: dict) -> str:
     return "\n".join(lines)
 
 
-def format_user_info_message(info: dict, name_link: str) -> str:
-    bots = info.get("bots", [])
+def order_bots(bots: list[dict], source_bot_id: int | None) -> list[dict]:
+    if source_bot_id is None:
+        return bots
+    source = [b for b in bots if b.get("bot_id") == source_bot_id]
+    rest = [b for b in bots if b.get("bot_id") != source_bot_id]
+    return source + rest
+
+
+def format_user_info_message(info: dict, name_link: str, source_bot_id: int | None = None) -> str:
+    bots = order_bots(info.get("bots", []), source_bot_id)
     first = bots[0] if bots else {}
     username = f"@{first['username']}" if first.get("username") else "—"
     header = (
@@ -91,13 +101,16 @@ def format_user_info_message(info: dict, name_link: str) -> str:
         f"<b>ID:</b> <code>{info['chat_id']}</code>\n"
         f"<b>Username:</b> {username}\n"
     )
-    blocks = [format_bot_block(bot) for bot in bots]
+    blocks = [
+        format_bot_block(bot, is_source=bot.get("bot_id") == source_bot_id)
+        for bot in bots
+    ]
     return header + "\n" + "\n\n".join(blocks)
 
 
-def pick_open_url(info: dict | None, fallback_username: str) -> str:
+def pick_open_url(info: dict | None, fallback_username: str, source_bot_id: int | None = None) -> str:
     if info:
-        for bot in info.get("bots", []):
+        for bot in order_bots(info.get("bots", []), source_bot_id):
             if bot.get("deeplink"):
                 return bot["deeplink"]
     return f"https://t.me/{fallback_username}"

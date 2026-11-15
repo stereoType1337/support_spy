@@ -3,7 +3,7 @@ from contextlib import suppress
 
 from aiogram import Bot, Router, F
 from aiogram.exceptions import TelegramRetryAfter
-from aiogram.filters import Command, MagicData
+from aiogram.filters import Command, CommandObject, MagicData
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
@@ -24,9 +24,13 @@ router.message.filter(F.chat.type == "private")
 router_dev = Router()
 
 
+START_BOT_PREFIX = "bot_"
+
+
 @router.message(Command("start"))
 async def handler(
         message: Message,
+        command: CommandObject,
         manager: Manager,
         redis: PostgresStorage,
         user_data: UserData,
@@ -43,6 +47,11 @@ async def handler(
     :param user_data: UserData object.
     :return: None
     """
+    args = command.args or ""
+    if args.startswith(START_BOT_PREFIX) and args.removeprefix(START_BOT_PREFIX).isdigit():
+        user_data.source_bot_id = int(args.removeprefix(START_BOT_PREFIX))
+        await redis.update_user(user_data.id, user_data)
+
     if user_data.language_code:
         await Window.main_menu(manager)
         await message.answer(manager.text_message.get("faq_msg"))

@@ -27,6 +27,8 @@ async def init_db(pool: asyncpg.Pool) -> None:
                 is_bot_restarted BOOLEAN NOT NULL DEFAULT FALSE
             );
 
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS source_bot_id BIGINT;
+
             CREATE INDEX IF NOT EXISTS idx_users_message_thread_id
                 ON users(message_thread_id) WHERE message_thread_id IS NOT NULL;
 

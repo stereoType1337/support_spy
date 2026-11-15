@@ -23,8 +23,8 @@ class PostgresStorage:
                     id, message_thread_id, message_silent_id, message_silent_mode,
                     full_name, username, state, is_banned, language_code,
                     created_at, has_sent_message, has_bot_replied,
-                    is_bot_stopped, is_bot_restarted
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                    is_bot_stopped, is_bot_restarted, source_bot_id
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
                 ON CONFLICT (id) DO UPDATE SET
                     message_thread_id = EXCLUDED.message_thread_id,
                     message_silent_id = EXCLUDED.message_silent_id,
@@ -38,13 +38,14 @@ class PostgresStorage:
                     has_sent_message = EXCLUDED.has_sent_message,
                     has_bot_replied = EXCLUDED.has_bot_replied,
                     is_bot_stopped = EXCLUDED.is_bot_stopped,
-                    is_bot_restarted = EXCLUDED.is_bot_restarted
+                    is_bot_restarted = EXCLUDED.is_bot_restarted,
+                    source_bot_id = EXCLUDED.source_bot_id
             """,
                 data.id, data.message_thread_id, data.message_silent_id,
                 data.message_silent_mode, data.full_name, data.username,
                 data.state, data.is_banned, data.language_code,
                 data.created_at, data.has_sent_message, data.has_bot_replied,
-                data.is_bot_stopped, data.is_bot_restarted,
+                data.is_bot_stopped, data.is_bot_restarted, data.source_bot_id,
             )
 
     async def get_by_message_thread_id(self, message_thread_id: int) -> UserData | None:
@@ -96,4 +97,5 @@ class PostgresStorage:
             has_bot_replied=row["has_bot_replied"],
             is_bot_stopped=row["is_bot_stopped"],
             is_bot_restarted=row["is_bot_restarted"],
+            source_bot_id=row["source_bot_id"],
         )
