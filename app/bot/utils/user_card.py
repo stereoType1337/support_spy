@@ -8,6 +8,7 @@ from app.bot.utils.postgres.models import UserData
 
 NO_PREVIEW = LinkPreviewOptions(is_disabled=True)
 ANS_CB_PREFIX = "ans:"
+INFO_REFRESH_CB = "info:refresh"
 
 
 def user_link(user_data: UserData) -> str:
@@ -38,7 +39,11 @@ async def build_user_card(manager: Manager, user_data: UserData) -> tuple[str, s
 def build_topic_keyboard(open_url: str, presets: dict) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.row(InlineKeyboardButton(text="Открыть в боте", url=open_url))
-    for key in sorted(presets.keys()):
-        kb.button(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
-    kb.adjust(1, 2)
+    kb.row(InlineKeyboardButton(text="🔄 Обновить информацию", callback_data=INFO_REFRESH_CB))
+    preset_buttons = [
+        InlineKeyboardButton(text=key, callback_data=f"{ANS_CB_PREFIX}{key}")
+        for key in sorted(presets.keys())
+    ]
+    for i in range(0, len(preset_buttons), 2):
+        kb.row(*preset_buttons[i:i + 2])
     return kb.as_markup()

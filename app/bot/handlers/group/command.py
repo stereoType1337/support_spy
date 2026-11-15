@@ -17,7 +17,7 @@ from app.bot.manager import Manager
 from app.bot.utils.postgres import PostgresStorage
 from app.bot.utils.postgres.stats import StatsStorage
 from app.bot.utils.create_forum_topic import edit_forum_topic_title
-from app.bot.utils.user_card import ANS_CB_PREFIX, NO_PREVIEW, build_topic_keyboard, build_user_card
+from app.bot.utils.user_card import ANS_CB_PREFIX, INFO_REFRESH_CB, NO_PREVIEW, build_topic_keyboard, build_user_card
 
 router_id = Router()
 router_id.message.filter(
@@ -598,6 +598,37 @@ async def handler(message: Message, manager: Manager, redis: PostgresStorage) ->
     text, open_url = await build_user_card(manager, user_data)
     keyboard = build_topic_keyboard(open_url, await get_presets())
     await message.reply(text, reply_markup=keyboard, link_preview_options=NO_PREVIEW)
+
+
+@router.callback_query(
+    F.data == INFO_REFRESH_CB,
+    MagicData(F.event_chat.id == F.config.bot.GROUP_ID),  # type: ignore
+)
+async def information_refresh(callback: CallbackQuery, manager: Manager, redis: PostgresStorage) -> None:
+    """
+    Reopens/refreshes the /information card in the current topic by its button.
+    """
+    if not callback.message or callback.message.message_thread_id is None:
+        await callback.answer("Это можно использовать только в топиках.", show_alert=True)
+        return
+
+    user_data = await redis.get_by_message_thread_id(callback.message.message_thread_id)
+    if not user_data:
+        await callback.answer("Не нашёл пользователя для этого топика.", show_alert=True)
+        return
+
+    text, open_url = await build_user_card(manager, user_data)
+    keyboard = build_topic_keyboard(open_url, await get_presets())
+
+    try:
+        await callback.message.edit_text(text, reply_markup=keyboard, link_preview_options=NO_PREVIEW)
+        await callback.answer("Обновлено")
+    except TelegramBadRequest as ex:
+        if "not modified" in (ex.message or "").lower():
+            await callback.answer("Данные не изменились")
+        else:
+            await callback.message.reply(text, reply_markup=keyboard, link_preview_options=NO_PREVIEW)
+            await callback.answer("Открыл заново")
 
 
 @router.message(Command(commands=["ban"]))
